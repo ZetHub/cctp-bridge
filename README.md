@@ -4,7 +4,7 @@ Client-side TypeScript SDK for **native USDC cross-chain transfers** over Circle
 
 The SDK **never touches keys**. Every on-chain write returns an unsigned `RawTransaction` for you to sign and broadcast with the wallet library you already use — viem, ethers, wagmi, Freighter, Lobstr, Stellar Wallets Kit, anything.
 
-📖 **Full documentation:** [bridge-docs.zethub.com](https://bridge-docs.zethub.com)
+📖 **Full documentation:** [bridge-docs.zethub.cloud](https://bridge-docs.zethub.cloud)
 
 ## Install
 
@@ -70,7 +70,7 @@ const mintTx = await sdk.bridge.rawTxBuilder.receive({
 await mySignAndBroadcast(mintTx);
 ```
 
-See the [Signing transactions guide](https://bridge-docs.zethub.com/docs/getting-started/signing) for the `mySignAndBroadcast` glue with viem, wagmi, ethers, Freighter, or the Stellar Wallets Kit.
+See the [Signing transactions guide](https://bridge-docs.zethub.cloud/docs/getting-started/signing) for the `mySignAndBroadcast` glue with viem, wagmi, ethers, Freighter, or the Stellar Wallets Kit.
 
 ## Design
 
@@ -78,7 +78,7 @@ See the [Signing transactions guide](https://bridge-docs.zethub.com/docs/getting
 - **Discovery over configuration.** `sdk.chainDetailsMap()` returns every supported network with its supported tokens. You pick a `TokenWithChainDetails` and pass it back.
 - **Small config surface.** RPC overrides, environment, optional custom Iris clients. That's it.
 - **Extensible.** Add a new chain family by implementing `IChainConnector` and passing it to `new ZetHubBridge({ connectors: { ... } })`.
-- **Stateless.** The SDK persists nothing. If your app needs to survive a page reload between the burn and the mint, [store the burn hash yourself](https://bridge-docs.zethub.com/docs/recovery/resuming) and call `attestation.waitFor` + `rawTxBuilder.receive` when you're ready.
+- **Stateless.** The SDK persists nothing. If your app needs to survive a page reload between the burn and the mint, [store the burn hash yourself](https://bridge-docs.zethub.cloud/docs/recovery/resuming) and call `attestation.waitFor` + `rawTxBuilder.receive` when you're ready.
 
 ## Supported chains
 
@@ -86,7 +86,7 @@ See the [Signing transactions guide](https://bridge-docs.zethub.com/docs/getting
 **Stellar:** Mainnet + Testnet.
 **EVM testnet:** Sepolia, Arbitrum Sepolia, OP Sepolia, Base Sepolia, Avalanche Fuji, Polygon Amoy.
 
-See the [Networks reference](https://bridge-docs.zethub.com/docs/reference/networks) for exact chain IDs and CCTP domains.
+See the [Networks reference](https://bridge-docs.zethub.cloud/docs/reference/networks) for exact chain IDs and CCTP domains.
 
 ## Configuration
 
@@ -102,7 +102,7 @@ new ZetHubBridge({
 });
 ```
 
-Everything is optional — `new ZetHubBridge()` works. Full details on the [Configuration page](https://bridge-docs.zethub.com/docs/getting-started/configuration).
+Everything is optional — `new ZetHubBridge()` works. Full details on the [Configuration page](https://bridge-docs.zethub.cloud/docs/getting-started/configuration).
 
 ## Development
 

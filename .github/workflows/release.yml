@@ -1,0 +1,61 @@
+name: Release
+
+# Fires after the CI workflow finishes on main. The `if:` guard below drops
+# the run when CI concluded with anything other than success, so a failed CI
+# never publishes.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+# Required by @semantic-release/github (write contents/issues/pull-requests)
+# and by --provenance on npm publish (write id-token).
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish
+    # Only run if the triggering CI workflow succeeded.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history is required so semantic-release can walk commits back
+          # to the previous tag.
+          fetch-depth: 0
+          persist-credentials: true
+          # Check out the exact commit that CI verified, not the current tip
+          # of main (which could have moved).
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Release
+        run: pnpx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

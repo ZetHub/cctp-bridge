@@ -1,0 +1,41 @@
+export const ErrorCode = {
+	/* Input validation ---------------------------------------------------- */
+	AMOUNT_REQUIRED: "AMOUNT_REQUIRED",
+	AMOUNT_INVALID: "AMOUNT_INVALID",
+	AMOUNT_TOO_SMALL: "AMOUNT_TOO_SMALL",
+	AMOUNT_EXCEEDS_BALANCE: "AMOUNT_EXCEEDS_BALANCE",
+	RECIPIENT_REQUIRED: "RECIPIENT_REQUIRED",
+	RECIPIENT_INVALID_EVM: "RECIPIENT_INVALID_EVM",
+	RECIPIENT_INVALID_STELLAR: "RECIPIENT_INVALID_STELLAR",
+	MEMO_INVALID_TEXT: "MEMO_INVALID_TEXT",
+	MEMO_INVALID_ID: "MEMO_INVALID_ID",
+	MEMO_INVALID_HASH: "MEMO_INVALID_HASH",
+
+	/* Routing ------------------------------------------------------------- */
+	MISSING_SOURCE: "MISSING_SOURCE",
+	MISSING_DESTINATION: "MISSING_DESTINATION",
+	MISSING_EVM_CHAIN_ID: "MISSING_EVM_CHAIN_ID",
+	MISSING_FORWARDER: "MISSING_FORWARDER",
+	MISSING_TRUSTLINE: "MISSING_TRUSTLINE",
+	UNSUPPORTED_ASSET: "UNSUPPORTED_ASSET",
+	UNSUPPORTED_ROUTE: "UNSUPPORTED_ROUTE",
+	MISMATCHED_ENVIRONMENTS: "MISMATCHED_ENVIRONMENTS",
+	SAME_NETWORK: "SAME_NETWORK",
+
+	/* Wallet-side (classified from provider errors) ----------------------- */
+	WRONG_NETWORK: "WRONG_NETWORK",
+	WALLET_SIGN_REJECTED: "WALLET_SIGN_REJECTED",
+
+	/* Network / off-chain -------------------------------------------------- */
+	RPC_ERROR: "RPC_ERROR",
+	RPC_TIMEOUT: "RPC_TIMEOUT",
+	ATTESTATION_TIMEOUT: "ATTESTATION_TIMEOUT",
+
+	/* On-chain outcome ---------------------------------------------------- */
+	BURN_FAILED: "BURN_FAILED",
+
+	/* Fallback ------------------------------------------------------------ */
+	UNKNOWN: "UNKNOWN",
+} as const;
+
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

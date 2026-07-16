@@ -1,0 +1,86 @@
+{
+  "name": "@zethub/bridge",
+  "version": "0.1.0",
+  "description": "Client-side SDK for native USDC cross-chain transfers (Circle CCTP V2) across EVM chains and Stellar. Returns unsigned transactions for any wallet to sign, no signer injection.",
+  "license": "MIT",
+  "author": "ZetHub",
+  "type": "module",
+  "sideEffects": false,
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint ./src",
+    "format": "biome format --write ./src",
+    "check": "biome check ./src",
+    "check:fix": "biome check --write ./src",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "RUN_INTEGRATION=1 vitest run",
+    "prepublishOnly": "pnpm check && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^14.6.1",
+    "viem": "2.37.6",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.0.6",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.9",
+    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/release-notes-generator": "^14.1.1",
+    "@types/node": "^22.9.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "conventional-changelog-conventionalcommits": "^10.2.1",
+    "semantic-release": "^25.0.7",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "cctp",
+    "usdc",
+    "circle",
+    "bridge",
+    "stellar",
+    "evm",
+    "cross-chain",
+    "zethub"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "pnpm": {
+    "overrides": {
+      "viem": "2.37.6"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "bufferutil",
+      "keccak",
+      "secp256k1",
+      "tiny-secp256k1",
+      "utf-8-validate"
+    ]
+  }
+}

@@ -11,6 +11,9 @@ export interface AttestationPollUpdate {
 	attempt: number;
 	status?: AttestationStatus;
 	delayReason?: string;
+	httpStatus?: number;
+	error?: Error;
+	nextPollInMs?: number;
 }
 
 export interface WaitForAttestationParams {

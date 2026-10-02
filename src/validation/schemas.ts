@@ -8,10 +8,15 @@ const isStellarAddress = (value: string): boolean =>
 	StrKey.isValidContract(value) ||
 	StrKey.isValidMed25519PublicKey(value);
 
+const isChecksumValid = (value: string): boolean => {
+	const hex = value.slice(2);
+	return hex === hex.toUpperCase() || isAddress(value);
+};
+
 export const evmAddressSchema = z
 	.string()
 	.regex(/^0x[a-fA-F0-9]{40}$/, ValidationMessage.INVALID_EVM_ADDRESS)
-	.refine((value) => isAddress(value), {
+	.refine(isChecksumValid, {
 		message: ValidationMessage.INVALID_EVM_CHECKSUM,
 	});
 

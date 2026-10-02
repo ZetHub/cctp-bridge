@@ -101,6 +101,7 @@ describe("Address", () => {
 		expect(Address.isStellar(stellar.replace("BBD47", "BBD48"))).toBe(false);
 		expect(Address.isEvm(evm.replace("C621", "c621"))).toBe(false);
 		expect(Address.isEvm(evm.toLowerCase())).toBe(true);
+		expect(Address.isEvm(`0x${evm.slice(2).toUpperCase()}`)).toBe(true);
 	});
 
 	it("constructs and compares", () => {

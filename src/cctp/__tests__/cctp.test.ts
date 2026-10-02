@@ -18,6 +18,16 @@ describe("CctpEncoder", () => {
 		);
 	});
 
+	it("pads an all-uppercase EVM address, which EIP-55 leaves unchecksummed", () => {
+		expect(
+			CctpEncoder.evmAddressToBytes32(
+				"0x28B5A0E9C621A5BADAA536219B3A228C8168CF5D",
+			),
+		).toBe(
+			"0x00000000000000000000000028b5a0e9c621a5badaa536219b3a228c8168cf5d",
+		);
+	});
+
 	it("refuses to pad an invalid EVM address", () => {
 		for (const bad of [
 			"0x28b5a0e9C621a5BadaA536219b3a228C8168cf5",

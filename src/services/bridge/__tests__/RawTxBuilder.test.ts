@@ -287,6 +287,18 @@ describe("DefaultRawTxBuilder", () => {
 			expect(evm.seen.burn[0].maxFee).toBe(156_000n);
 		});
 
+		it("leaves an EVM maxFee unrounded", async () => {
+			fees.feeBps = 1.37;
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.BASE),
+				destinationToken: tokenFor(NetworkId.ARBITRUM),
+				amount: "1",
+				fromAccountAddress: "0xfrom",
+				toAccountAddress: RECIPIENT_EVM,
+			});
+			expect(evm.seen.burn[0].maxFee).toBe(164n);
+		});
+
 		it("rescales an Amount built for another family to the source token", async () => {
 			await builder.send({
 				sourceToken: tokenFor(NetworkId.BASE),
@@ -487,6 +499,30 @@ describe("DefaultRawTxBuilder", () => {
 			expect(call.amount.raw).toBe(10_000_000_000n);
 			expect(call.amount.decimals).toBe(7);
 			expect(call.maxFee).toBe(1_560_000n);
+		});
+
+		it("rounds a quoted Stellar maxFee up to a whole 6-decimal amount", async () => {
+			fees.feeBps = 1.37;
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.STELLAR),
+				destinationToken: tokenFor(NetworkId.BASE),
+				amount: "1",
+				fromAccountAddress: "GAAA",
+				toAccountAddress: RECIPIENT_EVM,
+			});
+			expect(stellar.seen.burn[0].maxFee).toBe(1_650n);
+		});
+
+		it("rounds an explicit Stellar maxFee down to a whole 6-decimal amount", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.STELLAR),
+				destinationToken: tokenFor(NetworkId.BASE),
+				amount: "1",
+				maxFee: "0.0000015",
+				fromAccountAddress: "GAAA",
+				toAccountAddress: RECIPIENT_EVM,
+			});
+			expect(stellar.seen.burn[0].maxFee).toBe(10n);
 		});
 
 		it("scales an explicit maxFee to 7-decimal subunits", async () => {

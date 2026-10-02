@@ -247,7 +247,14 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			minFinalityThreshold,
 			attestationTime: source.attestationTime,
 		});
-		return FeeMath.maxFeeWithBuffer(burnAmount.raw, quote.feeBps);
+		const step = this.messagePrecisionStep(burnAmount.decimals);
+		const fee = FeeMath.maxFeeWithBuffer(burnAmount.raw, quote.feeBps);
+		return ((fee + step - 1n) / step) * step;
+	}
+
+	private messagePrecisionStep(tokenDecimals: number): bigint {
+		const extraDecimals = Math.max(tokenDecimals - CCTP_AMOUNT_DECIMALS, 0);
+		return 10n ** BigInt(extraDecimals);
 	}
 
 	private explicitMaxFee(
@@ -256,9 +263,9 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 		token: TokenAsset,
 		burnAmount: Amount,
 	): bigint {
-		const raw = this.parseAmount(maxFee, sourceToken).scaleTo(
-			token.decimals,
-		).raw;
+		const raw = this.parseAmount(maxFee, sourceToken)
+			.scaleTo(CCTP_AMOUNT_DECIMALS)
+			.scaleTo(token.decimals).raw;
 		if (raw < 0n || raw >= burnAmount.raw) {
 			throw new BridgeError("MAX_FEE_INVALID");
 		}

@@ -29,12 +29,11 @@ import type {
 	IChainConnector,
 } from "../../ports/IChainConnector";
 
-/** About 6 days at 5 to 6 seconds per ledger. */
 const DEFAULT_APPROVAL_EXPIRATION_LEDGERS = 100_000;
 const SOROBAN_FEE = "1000000";
 const TX_TIMEOUT_SECONDS = 180;
-/** i128::MAX. Passed to Soroban `approve` when the caller opts into an
- *  unlimited allowance. */
+/** i128::MAX. Passed to Soroban `approve` when the caller requests an
+ *  unlimited allowance (`amount` omitted). */
 const I128_MAX = (1n << 127n) - 1n;
 
 /** Chain connector for the Stellar family. Builds prepared Soroban XDRs

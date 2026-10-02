@@ -365,7 +365,6 @@ describe("DefaultRawTxBuilder", () => {
 			const call = stellar.seen.burn[0];
 			expect(call.amount.raw).toBe(10_000_000_000n);
 			expect(call.amount.decimals).toBe(7);
-			// 1.3 bps on 1000 USDC (10_000_000_000 subunits) = 1_300_000, buffered × 1.2
 			expect(call.maxFee).toBe(1_560_000n);
 		});
 

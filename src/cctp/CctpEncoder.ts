@@ -46,9 +46,6 @@ export class CctpEncoder {
 		return `0x${CctpEncoder.bytesToHex(raw)}`;
 	}
 
-	/** Left-pads a 20-byte EVM address to bytes32. Rejects anything that is
-	 *  not a valid address, since padding a typo yields a different, valid
-	 *  recipient and the burn cannot be reversed. */
 	static evmAddressToBytes32(address: string): Hex {
 		if (!evmAddressSchema.safeParse(address).success) {
 			throw new BridgeError("RECIPIENT_INVALID_EVM");

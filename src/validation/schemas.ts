@@ -3,13 +3,11 @@ import { isAddress } from "viem";
 import { z } from "zod";
 import { ValidationMessage } from "./messages";
 
-/** G account, C contract or M muxed account, with a valid checksum. */
 const isStellarAddress = (value: string): boolean =>
 	StrKey.isValidEd25519PublicKey(value) ||
 	StrKey.isValidContract(value) ||
 	StrKey.isValidMed25519PublicKey(value);
 
-/** 40 hex characters. A mixed-case address must pass its EIP-55 checksum. */
 export const evmAddressSchema = z
 	.string()
 	.regex(/^0x[a-fA-F0-9]{40}$/, ValidationMessage.INVALID_EVM_ADDRESS)

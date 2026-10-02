@@ -1,7 +1,4 @@
-/** Decimals of the `amount` inside a CCTP message, on every chain. Contract
- *  arguments use the source token's own decimals (7 on Stellar), so scale to
- *  this only to read a message amount or to drop precision a message cannot
- *  carry. */
+/** CCTP settles burn/mint amounts in 6-decimal subunits regardless of chain. */
 export const CCTP_AMOUNT_DECIMALS = 6;
 
 /** USDC decimals per chain family (identical across every CCTP V2 deployment). */

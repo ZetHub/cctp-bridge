@@ -9,10 +9,10 @@ The SDK **never touches keys**. Every on-chain write returns an unsigned `RawTra
 ## Install
 
 ```
-pnpm add @zethub/bridge
+pnpm add @zethub/bridge viem @stellar/stellar-sdk
 ```
 
-No wallet-library peers required. `viem` and `@stellar/stellar-sdk` are internal dependencies and will be deduped if you already use them.
+`viem` (2.37 or later 2.x) and `@stellar/stellar-sdk` (14.x to 17.x) are peer dependencies. The SDK uses the copies your app already has, so their types match across the API boundary and your app keeps the versions it tested.
 
 ## Quick start
 

@@ -22,6 +22,7 @@ import {
 	type StellarRpcOp,
 	type Network,
 } from "../../../index";
+import { xdrField } from "../../../__tests__/xdr";
 import { StellarChainConnector } from "../StellarChainConnector";
 
 const networks = new NetworkService();
@@ -82,19 +83,20 @@ function readInvocation(hostFn: xdr.HostFunction): {
 	functionName: string;
 	args: xdr.ScVal[];
 } {
-	const invoke = hostFn.invokeContract();
+	const invoke = xdrField<object>(hostFn, "invokeContract");
 	return {
-		contractAddress: Address.contract(
-			invoke.contractAddress().contractId(),
+		contractAddress: Address.fromScAddress(
+			xdrField<xdr.ScAddress>(invoke, "contractAddress"),
 		).toString(),
-		functionName: invoke.functionName().toString(),
-		args: invoke.args(),
+		functionName: String(xdrField<object>(invoke, "functionName")),
+		args: xdrField<xdr.ScVal[]>(invoke, "args"),
 	};
 }
 
 function i128Arg(arg: xdr.ScVal): bigint {
-	expect(arg.switch().name).toBe("scvI128");
-	return scValToNative(arg) as bigint;
+	const value: unknown = scValToNative(arg);
+	expect(typeof value).toBe("bigint");
+	return value as bigint;
 }
 
 describe("StellarChainConnector — approve", () => {
@@ -204,7 +206,7 @@ describe("StellarChainConnector — burn", () => {
 		expect(invocation.args).toHaveLength(8);
 		const callerArg = invocation.args[0];
 		// The first arg is an ScAddress (account type)
-		expect(callerArg.switch().name).toBe("scvAddress");
+		expect(scValToNative(callerArg)).toBe(SENDER_G);
 	});
 
 	it("targets the TokenMessenger contract", async () => {
@@ -258,7 +260,9 @@ describe("StellarChainConnector — burn", () => {
 			throw new Error();
 		}
 		const invocation = readInvocation(decodeInvoke(tx.xdr));
-		const caller = Buffer.from(invocation.args[5].bytes()).toString("hex");
+		const caller = Buffer.from(
+			scValToNative(invocation.args[5]) as Uint8Array,
+		).toString("hex");
 		expect(caller).toBe(
 			`000000000000000000000000${RECIPIENT_EVM.slice(2).toLowerCase()}`,
 		);

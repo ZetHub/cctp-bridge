@@ -15,8 +15,8 @@ export interface IChainConnector {
 	readonly family: ChainFamily;
 
 	/** Build an unsigned `approve` tx: `owner` grants the source
-	 *  TokenMessenger permission to move `amount` of `token`. Pass `undefined`
-	 *  for `amount` to request an unlimited approval. */
+	 *  TokenMessenger permission to move `amount` of `token`. `undefined`
+	 *  means unlimited; `RawTxBuilder` only passes it on explicit opt-in. */
 	buildApproveTx(params: BuildApproveTxParams): Promise<RawTransaction>;
 
 	/** Build the source-chain burn tx. `hookData` is populated when the
@@ -42,6 +42,8 @@ export interface BuildApproveTxParams {
 	readonly token: TokenAsset;
 	readonly owner: string;
 	readonly amount: Amount | undefined;
+	/** Ledgers until a Soroban allowance expires. Ignored on EVM. */
+	readonly expiresInLedgers?: number;
 }
 
 export interface BuildBurnTxParams {

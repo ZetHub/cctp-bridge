@@ -19,6 +19,7 @@ import {
 	type GetTokenBalanceOnChainParams,
 	type IChainConnector,
 	type IFeeService,
+	type ApproveTxParams,
 	type TokenWithChainDetails,
 } from "../../../index";
 import { DefaultRawTxBuilder } from "../RawTxBuilder";
@@ -165,13 +166,71 @@ describe("DefaultRawTxBuilder", () => {
 			expect(stellar.seen.approve[0].amount?.decimals).toBe(7);
 		});
 
-		it("passes undefined amount through for unlimited approval", async () => {
+		it("passes undefined amount through only on unlimited: true", async () => {
 			await builder.approve({
 				token: tokenFor(NetworkId.BASE),
 				owner: "0xowner",
+				unlimited: true,
 			});
 			expect(evm.seen.approve[0].amount).toBeUndefined();
 		});
+
+		it("throws APPROVAL_AMOUNT_REQUIRED when the amount is left out", async () => {
+			const params = {
+				token: tokenFor(NetworkId.STELLAR),
+				owner: "GAAA",
+			} as ApproveTxParams;
+			await expect(builder.approve(params)).rejects.toMatchObject({
+				code: "APPROVAL_AMOUNT_REQUIRED",
+			});
+			expect(stellar.seen.approve).toHaveLength(0);
+		});
+
+		it("throws APPROVAL_AMOUNT_CONFLICT for an amount plus unlimited", async () => {
+			const params = {
+				token: tokenFor(NetworkId.BASE),
+				owner: "0xowner",
+				amount: "1",
+				unlimited: true,
+			} as unknown as ApproveTxParams;
+			await expect(builder.approve(params)).rejects.toMatchObject({
+				code: "APPROVAL_AMOUNT_CONFLICT",
+			});
+			expect(evm.seen.approve).toHaveLength(0);
+		});
+
+		it("allows a zero amount, which revokes the allowance", async () => {
+			await builder.approve({
+				token: tokenFor(NetworkId.BASE),
+				owner: "0xowner",
+				amount: "0",
+			});
+			expect(evm.seen.approve[0].amount?.raw).toBe(0n);
+		});
+
+		it("passes expiresInLedgers through to the connector", async () => {
+			await builder.approve({
+				token: tokenFor(NetworkId.STELLAR),
+				owner: "GAAA",
+				amount: "1",
+				expiresInLedgers: 720,
+			});
+			expect(stellar.seen.approve[0].expiresInLedgers).toBe(720);
+		});
+
+		for (const expiresInLedgers of [0, -1, 1.5, Number.NaN]) {
+			it(`throws APPROVAL_EXPIRATION_INVALID for ${expiresInLedgers}`, async () => {
+				await expect(
+					builder.approve({
+						token: tokenFor(NetworkId.STELLAR),
+						owner: "GAAA",
+						amount: "1",
+						expiresInLedgers,
+					}),
+				).rejects.toMatchObject({ code: "APPROVAL_EXPIRATION_INVALID" });
+				expect(stellar.seen.approve).toHaveLength(0);
+			});
+		}
 	});
 
 	describe("send — EVM to EVM", () => {

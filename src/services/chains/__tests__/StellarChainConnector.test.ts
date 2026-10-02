@@ -29,6 +29,7 @@ const stellar = networks.byId(Environment.MAINNET, NetworkId.STELLAR)!;
 const base = networks.byId(Environment.MAINNET, NetworkId.BASE)!;
 
 const SENDER_G = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+const LATEST_LEDGER = 100_000;
 const RECIPIENT_EVM = "0x9f70008A83912b19B3e64B58d5F4A08bBD7b3F0e";
 
 interface FakeServerOptions {
@@ -40,7 +41,7 @@ interface FakeServerOptions {
 function makeFakeServer(opts: FakeServerOptions = {}) {
 	return {
 		getAccount: async (address: string) => new Account(address, "42"),
-		getLatestLedger: async () => ({ sequence: 100_000, id: "abc", protocolVersion: 22 }),
+		getLatestLedger: async () => ({ sequence: LATEST_LEDGER, id: "abc", protocolVersion: 22 }),
 		prepareTransaction: async (tx: unknown) => tx as never,
 		simulateTransaction: async (_tx: unknown) => ({
 			result: {
@@ -125,6 +126,35 @@ describe("StellarChainConnector — approve", () => {
 		}
 		const invocation = readInvocation(decodeInvoke(tx.xdr));
 		expect(i128Arg(invocation.args[2])).toBe(10_000_000n);
+	});
+
+	it("expires the allowance 100_000 ledgers ahead by default", async () => {
+		const tx = await connector.buildApproveTx({
+			network: stellar,
+			token: stellar.token(AssetSymbol.USDC),
+			owner: SENDER_G,
+			amount: Amount.fromHuman("1", ChainFamily.STELLAR),
+		});
+		if (!isRawSoroban(tx)) {
+			throw new Error();
+		}
+		const invocation = readInvocation(decodeInvoke(tx.xdr));
+		expect(scValToNative(invocation.args[3])).toBe(LATEST_LEDGER + 100_000);
+	});
+
+	it("expires the allowance expiresInLedgers ahead when set", async () => {
+		const tx = await connector.buildApproveTx({
+			network: stellar,
+			token: stellar.token(AssetSymbol.USDC),
+			owner: SENDER_G,
+			amount: Amount.fromHuman("1", ChainFamily.STELLAR),
+			expiresInLedgers: 720,
+		});
+		if (!isRawSoroban(tx)) {
+			throw new Error();
+		}
+		const invocation = readInvocation(decodeInvoke(tx.xdr));
+		expect(scValToNative(invocation.args[3])).toBe(LATEST_LEDGER + 720);
 	});
 
 	it("rescales a 6-decimal amount to Stellar subunits", async () => {

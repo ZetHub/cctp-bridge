@@ -35,3 +35,5 @@ export const hexSchema = z
 export const humanAmountSchema = z
 	.string()
 	.regex(/^\d*(\.\d*)?$/, ValidationMessage.INVALID_AMOUNT);
+
+export const ledgerCountSchema = z.number().int().positive();

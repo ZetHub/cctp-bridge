@@ -17,6 +17,7 @@ import { BridgeError, type ErrorCode } from "../../errors";
 import type { IChainConnector } from "../../ports/IChainConnector";
 import type { IFeeService } from "../../ports/IFeeService";
 import type { INetworkService } from "../../ports/INetworkService";
+import { ledgerCountSchema } from "../../validation/schemas";
 
 const INVALID_RECIPIENT_CODE: Record<ChainFamily, ErrorCode> = {
 	[ChainFamily.EVM]: "RECIPIENT_INVALID_EVM",
@@ -35,11 +36,28 @@ export interface TokenWithChainDetails {
 	readonly network: Network;
 }
 
-export interface ApproveTxParams {
+interface ApproveTxBaseParams {
 	token: TokenWithChainDetails;
 	owner: string;
-	amount?: Amount | string | number;
+	/** Stellar only: ledgers until the allowance expires. Defaults to 100_000
+	 *  (about 6 days). EVM allowances do not expire. */
+	expiresInLedgers?: number;
 }
+
+/** Approves exactly `amount`. Pass 0 to revoke an allowance. */
+export interface ApproveExactTxParams extends ApproveTxBaseParams {
+	amount: Amount | string | number;
+	unlimited?: false;
+}
+
+/** Lets the TokenMessenger move the owner's whole balance until the
+ *  allowance expires (Stellar) or is revoked (EVM). */
+export interface ApproveUnlimitedTxParams extends ApproveTxBaseParams {
+	amount?: undefined;
+	unlimited: true;
+}
+
+export type ApproveTxParams = ApproveExactTxParams | ApproveUnlimitedTxParams;
 
 export interface SendTxParams {
 	sourceToken: TokenWithChainDetails;
@@ -76,16 +94,22 @@ export interface RawTxBuilderDeps {
 export class DefaultRawTxBuilder implements RawTxBuilder {
 	constructor(private readonly deps: RawTxBuilderDeps) {}
 
-	approve(params: ApproveTxParams): Promise<RawTransaction> {
-		const { token, owner, amount } = params;
+	async approve(params: ApproveTxParams): Promise<RawTransaction> {
+		const { token, owner, expiresInLedgers } = params;
+		const amount = this.approvalAmount(params);
+		if (
+			expiresInLedgers !== undefined &&
+			!ledgerCountSchema.safeParse(expiresInLedgers).success
+		) {
+			throw new BridgeError("APPROVAL_EXPIRATION_INVALID");
+		}
 		const connector = this.connectorFor(token.network);
-		const parsedAmount =
-			amount === undefined ? undefined : this.parseAmount(amount, token);
 		return connector.buildApproveTx({
 			network: token.network,
 			token: this.toTokenAsset(token),
 			owner,
-			amount: parsedAmount,
+			amount,
+			expiresInLedgers,
 		});
 	}
 
@@ -158,6 +182,20 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			message,
 			attestation,
 		});
+	}
+
+	/** `undefined` means unlimited, and only on explicit opt-in. */
+	private approvalAmount(params: ApproveTxParams): Amount | undefined {
+		if (params.unlimited === true) {
+			if (params.amount !== undefined) {
+				throw new BridgeError("APPROVAL_AMOUNT_CONFLICT");
+			}
+			return undefined;
+		}
+		if (params.amount === undefined) {
+			throw new BridgeError("APPROVAL_AMOUNT_REQUIRED");
+		}
+		return this.parseAmount(params.amount, params.token);
 	}
 
 	private connectorFor(network: Network): IChainConnector {

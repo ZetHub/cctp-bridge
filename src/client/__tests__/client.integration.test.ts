@@ -22,6 +22,7 @@ import {
 	type IChainConnector,
 	type IFeeService,
 	type WaitForAttestationParams,
+	RpcMode,
 } from "../../index";
 
 /** Recording connector — captures the params it was called with and returns
@@ -322,6 +323,26 @@ describe("ZetHubBridge — RPC overrides", () => {
 		expect(chains[NetworkId.BASE].network.rpcUrls[0]).toBe(
 			"https://mainnet.base.org",
 		);
+	});
+
+	it("replaces the defaults with rpcMode REPLACE", async () => {
+		const sdk = new ZetHubBridge({
+			rpc: {
+				[NetworkId.BASE]: ["https://your-node.example"],
+				[NetworkId.STELLAR]: ["https://your-soroban.example"],
+			},
+			rpcMode: RpcMode.REPLACE,
+		});
+		const chains = await sdk.chainDetailsMap();
+		expect(chains[NetworkId.BASE].network.rpcUrls).toEqual([
+			"https://your-node.example",
+		]);
+		expect(chains[NetworkId.STELLAR].network.rpcUrls).toEqual([
+			"https://your-soroban.example",
+		]);
+		expect(
+			chains[NetworkId.ETHEREUM].network.rpcUrls.length,
+		).toBeGreaterThan(0);
 	});
 
 	it("passes through unchanged when no rpc option is provided", async () => {

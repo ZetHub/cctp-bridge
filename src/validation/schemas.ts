@@ -44,3 +44,12 @@ export const irisFeeQuotesSchema = z.array(
 		minimumFee: z.number().nonnegative(),
 	}),
 );
+
+export const httpTransportErrorSchema = z.object({
+	isAxiosError: z.literal(true),
+});
+
+export const jsonRpcErrorSchema = z.object({
+	code: z.number(),
+	message: z.string(),
+});

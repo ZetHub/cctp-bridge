@@ -28,31 +28,84 @@ describe("StellarRpc", () => {
 		expect(seen).toEqual([stellar.rpcUrls[0]]);
 	});
 
-	it("falls over to the next URL when the first throws", async () => {
-		const rpc = new StellarRpc();
+	function stubServers(rpc: StellarRpc): void {
 		(
 			rpc as unknown as { serverFor: (url: string) => unknown }
 		).serverFor = (url: string) => ({ url });
-		const seen: string[] = [];
-		const result = await rpc.run(stellar, async (server, url) => {
-			seen.push(url);
-			if (seen.length === 1) throw new Error("first endpoint down");
-			return (server as { url: string }).url;
+	}
+
+	function transportError(status?: number) {
+		return Object.assign(new Error("transport"), {
+			isAxiosError: true,
+			code: status === undefined ? "ECONNREFUSED" : "ERR_BAD_RESPONSE",
+			response: status === undefined ? undefined : { status },
 		});
-		expect(result).toBe(stellar.rpcUrls[1]);
-		expect(seen.length).toBe(2);
+	}
+
+	for (const [label, error] of [
+		["a refused connection", transportError()],
+		["HTTP 503", transportError(503)],
+		["HTTP 429", transportError(429)],
+	] as const) {
+		it(`falls over to the next URL on ${label}`, async () => {
+			const rpc = new StellarRpc();
+			stubServers(rpc);
+			const seen: string[] = [];
+			const result = await rpc.run(stellar, async (server, url) => {
+				seen.push(url);
+				if (seen.length === 1) {
+					throw error;
+				}
+				return (server as { url: string }).url;
+			});
+			expect(result).toBe(stellar.rpcUrls[1]);
+			expect(seen).toEqual(stellar.rpcUrls);
+		});
+	}
+
+	it("throws a simulation error from the first endpoint without failing over", async () => {
+		const rpc = new StellarRpc();
+		stubServers(rpc);
+		const seen: string[] = [];
+		await expect(
+			rpc.run(stellar, async (_server, url) => {
+				seen.push(url);
+				throw new Error("HostError: Error(Contract, #13)");
+			}),
+		).rejects.toMatchObject({
+			code: "RPC_ERROR",
+			message: "HostError: Error(Contract, #13)",
+		});
+		expect(seen).toEqual([stellar.rpcUrls[0]]);
 	});
 
-	it("throws BridgeError(RPC_ERROR) when every URL fails", async () => {
+	it("throws a JSON-RPC error with its message without failing over", async () => {
 		const rpc = new StellarRpc();
-		(
-			rpc as unknown as { serverFor: (url: string) => unknown }
-		).serverFor = () => ({});
+		stubServers(rpc);
+		const seen: string[] = [];
 		await expect(
-			rpc.run(stellar, async () => {
-				throw new Error("all down");
+			rpc.run(stellar, async (_server, url) => {
+				seen.push(url);
+				throw { code: -32602, message: "invalid parameters" };
+			}),
+		).rejects.toMatchObject({
+			code: "RPC_ERROR",
+			message: "invalid parameters",
+		});
+		expect(seen).toEqual([stellar.rpcUrls[0]]);
+	});
+
+	it("throws BridgeError(RPC_ERROR) when every URL has a transport error", async () => {
+		const rpc = new StellarRpc();
+		stubServers(rpc);
+		const seen: string[] = [];
+		await expect(
+			rpc.run(stellar, async (_server, url) => {
+				seen.push(url);
+				throw transportError(502);
 			}),
 		).rejects.toMatchObject({ code: "RPC_ERROR" });
+		expect(seen).toEqual(stellar.rpcUrls);
 	});
 
 	it("caches the server per URL", async () => {

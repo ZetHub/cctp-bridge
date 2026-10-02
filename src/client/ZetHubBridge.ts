@@ -7,6 +7,7 @@ import {
 	ChainFamily,
 	Environment,
 	FinalityThreshold,
+	RpcMode,
 } from "../domain/enums";
 import type { Network } from "../domain/Network";
 import type { NetworkIdInput } from "../domain/NetworkId";
@@ -41,6 +42,7 @@ export type NodeRpcUrls = Partial<Record<NetworkIdInput, readonly string[]>>;
 export interface ZetHubBridgeOptions {
 	/** Per-network RPC URL overrides, keyed by network id. Prepended to defaults. */
 	rpc?: NodeRpcUrls;
+	rpcMode?: RpcMode;
 	/** Which network set to expose. Defaults to `Environment.MAINNET`. */
 	environment?: Environment;
 	/** Override the Iris attestation endpoints (mainnet + testnet). */
@@ -163,7 +165,11 @@ export class ZetHubBridge {
 			options.attestation ?? new IrisAttestationService();
 		this.feeService = options.fees ?? new IrisFeeService();
 
-		const registry = this.applyRpcOverrides(DEFAULT_NETWORKS, options.rpc);
+		const registry = this.applyRpcOverrides(
+			DEFAULT_NETWORKS,
+			options.rpc,
+			options.rpcMode ?? RpcMode.PREPEND,
+		);
 		this.networkService = new NetworkService(registry);
 
 		this.connectors = {
@@ -396,7 +402,8 @@ export class ZetHubBridge {
 
 	private applyRpcOverrides(
 		registry: NetworkRegistry,
-		overrides?: NodeRpcUrls,
+		overrides: NodeRpcUrls | undefined,
+		mode: RpcMode,
 	): NetworkRegistry {
 		if (!overrides) {
 			return registry;
@@ -407,8 +414,11 @@ export class ZetHubBridge {
 				if (!override?.length) {
 					return n;
 				}
-				const merged = [...new Set([...override, ...n.rpcUrls])];
-				return n.withRpcUrls(merged);
+				const urls =
+					mode === RpcMode.REPLACE
+						? [...new Set(override)]
+						: [...new Set([...override, ...n.rpcUrls])];
+				return n.withRpcUrls(urls);
 			});
 		return {
 			[Environment.MAINNET]: patch(registry[Environment.MAINNET]),

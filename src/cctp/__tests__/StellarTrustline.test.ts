@@ -15,16 +15,24 @@ const stellar = networks.byId(Environment.MAINNET, "stellar")!;
 class FakeStellarRpc extends StellarRpc {
 	entries: unknown[] = [];
 	runs = 0;
+	keys: unknown[] = [];
 	async run<T>(_network: Network, op: StellarRpcOp<T>): Promise<T> {
 		this.runs++;
 		return op(
 			{
-				getLedgerEntries: async () => ({ entries: this.entries }),
+				getLedgerEntries: async (key: unknown) => {
+					this.keys.push(key);
+					return { entries: this.entries };
+				},
 			} as never,
 			"https://fake",
 		);
 	}
 }
+
+const BASE_G = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+const MUXED_M =
+	"MBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLEAAAAAAAAAAAFJN3W";
 
 describe("StellarTrustline", () => {
 	let rpc: FakeStellarRpc;
@@ -53,6 +61,22 @@ describe("StellarTrustline", () => {
 			token as never,
 		);
 		expect(result).toBe(true);
+		expect(rpc.runs).toBe(0);
+	});
+
+	it("checks the base account's trustline for a muxed address", async () => {
+		rpc.entries = [{}];
+		const token = stellar.token(AssetSymbol.USDC);
+		expect(await trustline.has(stellar, MUXED_M, token)).toBe(true);
+		await trustline.has(stellar, BASE_G, token);
+		expect(rpc.keys).toHaveLength(2);
+		expect(rpc.keys[0]).toEqual(rpc.keys[1]);
+	});
+
+	it("throws RECIPIENT_INVALID_STELLAR for an invalid address without RPC", async () => {
+		await expect(
+			trustline.has(stellar, "GBAD", stellar.token(AssetSymbol.USDC)),
+		).rejects.toMatchObject({ code: "RECIPIENT_INVALID_STELLAR" });
 		expect(rpc.runs).toBe(0);
 	});
 

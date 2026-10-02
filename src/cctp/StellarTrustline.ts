@@ -1,7 +1,11 @@
-import { Asset, Keypair, xdr } from "@stellar/stellar-sdk";
+import { Asset, Keypair, StrKey, xdr } from "@stellar/stellar-sdk";
 import type { Network } from "../domain/Network";
 import type { TokenAsset } from "../domain/TokenAsset";
+import { BridgeError } from "../errors";
+import { stellarAddressSchema } from "../validation/schemas";
 import type { StellarRpc } from "./StellarRpc";
+
+const ED25519_KEY_BYTES = 32;
 
 /**
  * Checks whether a Stellar account holds the trustline required to receive a
@@ -16,6 +20,9 @@ export class StellarTrustline {
 		address: string,
 		token: TokenAsset,
 	): Promise<boolean> {
+		if (!stellarAddressSchema.safeParse(address).success) {
+			throw new BridgeError("RECIPIENT_INVALID_STELLAR");
+		}
 		if (address.startsWith("C")) {
 			return true;
 		}
@@ -25,7 +32,9 @@ export class StellarTrustline {
 		const asset = new Asset(token.assetCode, token.issuer);
 		const key = xdr.LedgerKey.trustline(
 			new xdr.LedgerKeyTrustLine({
-				accountId: Keypair.fromPublicKey(address).xdrAccountId(),
+				accountId: Keypair.fromPublicKey(
+					this.baseAccountOf(address),
+				).xdrAccountId(),
 				asset: asset.toTrustLineXDRObject(),
 			}),
 		);
@@ -33,5 +42,15 @@ export class StellarTrustline {
 			const res = await server.getLedgerEntries(key);
 			return res.entries.length > 0;
 		});
+	}
+
+	private baseAccountOf(address: string): string {
+		if (!StrKey.isValidMed25519PublicKey(address)) {
+			return address;
+		}
+		const payload = StrKey.decodeMed25519PublicKey(address);
+		return StrKey.encodeEd25519PublicKey(
+			payload.subarray(0, ED25519_KEY_BYTES),
+		);
 	}
 }

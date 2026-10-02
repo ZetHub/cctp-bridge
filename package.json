@@ -4,6 +4,10 @@
   "description": "Client-side SDK for native USDC cross-chain transfers (Circle CCTP V2) across EVM chains and Stellar. Returns unsigned transactions for any wallet to sign, no signer injection.",
   "license": "MIT",
   "author": "ZetHub",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZetHub/cctp-bridge.git"
+  },
   "type": "module",
   "sideEffects": false,
   "packageManager": "pnpm@9.15.4",
@@ -72,7 +76,8 @@
     "zethub"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "pnpm": {
     "onlyBuiltDependencies": [

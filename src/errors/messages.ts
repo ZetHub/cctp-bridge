@@ -11,6 +11,7 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 		"Pass either an approval amount or unlimited: true, not both.",
 	APPROVAL_EXPIRATION_INVALID:
 		"expiresInLedgers must be a positive whole number of ledgers.",
+	MAX_FEE_INVALID: "maxFee must be zero or more, and less than the amount.",
 	RECIPIENT_REQUIRED: "Enter a recipient address.",
 	RECIPIENT_INVALID_EVM:
 		"Recipient must be a 0x-prefixed Ethereum-style address (40 hex characters, valid checksum).",
@@ -42,6 +43,10 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 		"Timed out waiting for Circle to issue the attestation. Your transfer is safe; retry the mint step.",
 	ATTESTATION_REQUEST_FAILED:
 		"Circle's attestation service rejected the request. Check the source chain and the burn transaction hash.",
+	FEE_QUOTE_FAILED:
+		"Could not get a fee quote from Circle. Retry, or pass maxFee to send().",
+	FEE_TIER_UNAVAILABLE:
+		"Circle did not quote a fee for this finality threshold on this route.",
 	BURN_FAILED: "Burn transaction failed on the source chain.",
 	UNKNOWN: "Something went wrong. Check the developer console for details.",
 };

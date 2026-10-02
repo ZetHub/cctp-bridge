@@ -3,4 +3,5 @@ export * from "./bridge";
 export * from "./chains/EvmChainConnector";
 export * from "./chains/StellarChainConnector";
 export * from "./fees";
+export * from "./iris";
 export * from "./networks";

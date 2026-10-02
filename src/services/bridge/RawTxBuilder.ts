@@ -61,6 +61,7 @@ export interface SendTxParams {
 	fromAccountAddress: string;
 	toAccountAddress: string;
 	minFinalityThreshold?: FinalityThreshold;
+	maxFee?: Amount | string | number;
 	memo?: BridgeMemo;
 }
 
@@ -142,13 +143,15 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 		const minFinalityThreshold =
 			params.minFinalityThreshold ?? FinalityThreshold.FAST;
 
-		const quote = await this.deps.feeService.getQuote({
-			environment: source.environment,
-			sourceDomain: source.cctpDomain,
-			destinationDomain: destination.cctpDomain,
-			minFinalityThreshold,
-		});
-		const maxFee = FeeMath.maxFeeWithBuffer(burnAmount.raw, quote.feeBps);
+		const maxFee =
+			params.maxFee === undefined
+				? await this.quotedMaxFee(
+						source,
+						destination,
+						minFinalityThreshold,
+						burnAmount,
+					)
+				: this.explicitMaxFee(params.maxFee, sourceToken, token, burnAmount);
 
 		const hookData = this.hookDataFor(source, destination, toAccountAddress);
 		const connector = this.connectorFor(source);
@@ -201,6 +204,36 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			);
 		}
 		return connector;
+	}
+
+	private async quotedMaxFee(
+		source: Network,
+		destination: Network,
+		minFinalityThreshold: FinalityThreshold,
+		burnAmount: Amount,
+	): Promise<bigint> {
+		const quote = await this.deps.feeService.getQuote({
+			environment: source.environment,
+			sourceDomain: source.cctpDomain,
+			destinationDomain: destination.cctpDomain,
+			minFinalityThreshold,
+		});
+		return FeeMath.maxFeeWithBuffer(burnAmount.raw, quote.feeBps);
+	}
+
+	private explicitMaxFee(
+		maxFee: Amount | string | number,
+		sourceToken: TokenWithChainDetails,
+		token: TokenAsset,
+		burnAmount: Amount,
+	): bigint {
+		const raw = this.parseAmount(maxFee, sourceToken).scaleTo(
+			token.decimals,
+		).raw;
+		if (raw < 0n || raw >= burnAmount.raw) {
+			throw new BridgeError("MAX_FEE_INVALID");
+		}
+		return raw;
 	}
 
 	private hookDataFor(

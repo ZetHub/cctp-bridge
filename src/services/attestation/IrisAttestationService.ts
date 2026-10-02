@@ -1,4 +1,4 @@
-import { AttestationStatus, Environment } from "../../domain/enums";
+import { AttestationStatus } from "../../domain/enums";
 import {
 	AttestationTimeoutError,
 	BridgeError,
@@ -10,11 +10,7 @@ import type {
 	WaitForAttestationParams,
 } from "../../ports/IAttestationService";
 import { txHashSchema } from "../../validation/schemas";
-
-const DEFAULT_HOSTS: Record<Environment, string> = {
-	[Environment.MAINNET]: "https://iris-api.circle.com",
-	[Environment.TESTNET]: "https://iris-api-sandbox.circle.com",
-};
+import { IrisClient, type IrisClientOptions } from "../iris/IrisClient";
 
 const HTTP_REQUEST_TIMEOUT = 408;
 const HTTP_NOT_FOUND = 404;
@@ -54,25 +50,22 @@ interface IrisPoll {
 	readonly error?: Error;
 }
 
-export interface IrisAttestationOptions {
-	hosts?: Partial<Record<Environment, string>>;
+export interface IrisAttestationOptions extends IrisClientOptions {
 	defaultIntervalMs?: number;
 	defaultTimeoutMs?: number;
 }
 
-export class IrisAttestationService implements IAttestationService {
-	private readonly hosts: Record<Environment, string>;
+export class IrisAttestationService
+	extends IrisClient
+	implements IAttestationService
+{
 	private readonly defaultIntervalMs: number;
 	private readonly defaultTimeoutMs: number;
 
 	constructor(options: IrisAttestationOptions = {}) {
-		this.hosts = { ...DEFAULT_HOSTS, ...options.hosts };
+		super(options);
 		this.defaultIntervalMs = options.defaultIntervalMs ?? 4000;
 		this.defaultTimeoutMs = options.defaultTimeoutMs ?? 30 * 60 * 1000;
-	}
-
-	host(environment: Environment): string {
-		return this.hosts[environment];
 	}
 
 	async waitForAttestation(
@@ -130,10 +123,7 @@ export class IrisAttestationService implements IAttestationService {
 	private async poll(url: string): Promise<IrisPoll> {
 		let res: Response;
 		try {
-			res = await fetch(url, {
-				headers: { Accept: "application/json" },
-				cache: "no-store",
-			});
+			res = await this.request(url);
 		} catch (err) {
 			return { outcome: PollOutcome.FAILED, error: this.toError(err) };
 		}
@@ -238,17 +228,5 @@ export class IrisAttestationService implements IAttestationService {
 			status: AttestationStatus.COMPLETE,
 			eventNonce: message.eventNonce,
 		};
-	}
-
-	private async readBody(res: Response): Promise<string> {
-		try {
-			return await res.text();
-		} catch {
-			return "";
-		}
-	}
-
-	private toError(err: unknown): Error {
-		return err instanceof Error ? err : new Error(String(err));
 	}
 }

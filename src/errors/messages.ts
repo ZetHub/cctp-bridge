@@ -19,6 +19,8 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 	MEMO_INVALID_TEXT: "Memo text must be 28 characters or fewer (ASCII).",
 	MEMO_INVALID_ID: "Memo ID must be an unsigned integer.",
 	MEMO_INVALID_HASH: "Memo hash/return must be 32 bytes (64 hex characters).",
+	TX_HASH_INVALID:
+		"Transaction hash must be 64 hex characters, with or without a 0x prefix.",
 	MISSING_SOURCE: "Pick a source chain.",
 	MISSING_DESTINATION: "Pick a destination chain.",
 	MISSING_EVM_CHAIN_ID: "Network is missing its EVM chain id.",
@@ -38,6 +40,8 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 	RPC_TIMEOUT: "RPC request timed out. Retrying with a fallback endpoint.",
 	ATTESTATION_TIMEOUT:
 		"Timed out waiting for Circle to issue the attestation. Your transfer is safe; retry the mint step.",
+	ATTESTATION_REQUEST_FAILED:
+		"Circle's attestation service rejected the request. Check the source chain and the burn transaction hash.",
 	BURN_FAILED: "Burn transaction failed on the source chain.",
 	UNKNOWN: "Something went wrong. Check the developer console for details.",
 };

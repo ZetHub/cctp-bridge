@@ -13,6 +13,7 @@ export const ErrorCode = {
 	MEMO_INVALID_TEXT: "MEMO_INVALID_TEXT",
 	MEMO_INVALID_ID: "MEMO_INVALID_ID",
 	MEMO_INVALID_HASH: "MEMO_INVALID_HASH",
+	TX_HASH_INVALID: "TX_HASH_INVALID",
 
 	/* Routing ------------------------------------------------------------- */
 	MISSING_SOURCE: "MISSING_SOURCE",
@@ -33,6 +34,7 @@ export const ErrorCode = {
 	RPC_ERROR: "RPC_ERROR",
 	RPC_TIMEOUT: "RPC_TIMEOUT",
 	ATTESTATION_TIMEOUT: "ATTESTATION_TIMEOUT",
+	ATTESTATION_REQUEST_FAILED: "ATTESTATION_REQUEST_FAILED",
 
 	/* On-chain outcome ---------------------------------------------------- */
 	BURN_FAILED: "BURN_FAILED",

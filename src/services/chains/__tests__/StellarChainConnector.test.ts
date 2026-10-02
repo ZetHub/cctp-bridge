@@ -36,6 +36,8 @@ interface FakeServerOptions {
 	balance?: bigint;
 	allowance?: bigint;
 	nativeXlmStroops?: string;
+	retval?: xdr.ScVal;
+	simulationError?: string;
 }
 
 function makeFakeServer(opts: FakeServerOptions = {}) {
@@ -43,13 +45,18 @@ function makeFakeServer(opts: FakeServerOptions = {}) {
 		getAccount: async (address: string) => new Account(address, "42"),
 		getLatestLedger: async () => ({ sequence: LATEST_LEDGER, id: "abc", protocolVersion: 22 }),
 		prepareTransaction: async (tx: unknown) => tx as never,
-		simulateTransaction: async (_tx: unknown) => ({
-			result: {
-				retval: nativeToScVal(opts.balance ?? opts.allowance ?? 0n, {
-					type: "i128",
-				}),
-			},
-		}),
+		simulateTransaction: async (_tx: unknown) =>
+			opts.simulationError
+				? { error: opts.simulationError, events: [], latestLedger: 1 }
+				: {
+						result: {
+							retval:
+								opts.retval ??
+								nativeToScVal(opts.balance ?? opts.allowance ?? 0n, {
+									type: "i128",
+								}),
+						},
+					},
 		sendTransaction: async () => ({ hash: "sent", status: "PENDING", latestLedger: 1 }),
 	} as unknown as rpc.Server;
 }
@@ -234,6 +241,28 @@ describe("StellarChainConnector — burn", () => {
 		expect(i128Arg(invocation.args[1])).toBe(10_000_000n);
 		expect(i128Arg(invocation.args[6])).toBe(1_560n);
 	});
+
+	it("encodes destination_caller as bytes32 when set", async () => {
+		const tx = await connector.buildBurnTx({
+			source: stellar,
+			destination: base,
+			token: stellar.token(AssetSymbol.USDC),
+			amount: Amount.fromHuman("1", ChainFamily.STELLAR),
+			from: SENDER_G,
+			recipient: RECIPIENT_EVM,
+			maxFee: 0n,
+			minFinalityThreshold: 1000,
+			destinationCaller: RECIPIENT_EVM,
+		});
+		if (!isRawSoroban(tx)) {
+			throw new Error();
+		}
+		const invocation = readInvocation(decodeInvoke(tx.xdr));
+		const caller = Buffer.from(invocation.args[5].bytes()).toString("hex");
+		expect(caller).toBe(
+			`000000000000000000000000${RECIPIENT_EVM.slice(2).toLowerCase()}`,
+		);
+	});
 });
 
 describe("StellarChainConnector — receive", () => {
@@ -285,6 +314,30 @@ describe("StellarChainConnector — reads", () => {
 		expect(result.raw).toBe(42_000_000n);
 		expect(result.decimals).toBe(7);
 		expect(result.toHuman()).toBe("4.2");
+	});
+});
+
+describe("StellarChainConnector — isMessageReceived", () => {
+	const nonce = `0x${"59".repeat(32)}` as `0x${string}`;
+
+	for (const used of [true, false]) {
+		it(`returns ${used} from is_nonce_used`, async () => {
+			const connector = new StellarChainConnector(
+				new FakeStellarRpc(makeFakeServer({ retval: xdr.ScVal.scvBool(used) })),
+			);
+			expect(
+				await connector.isMessageReceived({ network: stellar, nonce }),
+			).toBe(used);
+		});
+	}
+
+	it("throws RPC_ERROR when the simulation fails", async () => {
+		const connector = new StellarChainConnector(
+			new FakeStellarRpc(makeFakeServer({ simulationError: "HostError" })),
+		);
+		await expect(
+			connector.isMessageReceived({ network: stellar, nonce }),
+		).rejects.toMatchObject({ code: "RPC_ERROR", message: "HostError" });
 	});
 });
 

@@ -103,6 +103,30 @@ describe("EvmChainConnector — pure tx builders", () => {
 			expect(decoded.args[6]).toBe(1000); // finality
 		});
 
+		it("encodes a destinationCaller as bytes32 when set", async () => {
+			const tx = await connector.buildBurnTx({
+				source: base,
+				destination: arb,
+				token: base.token(AssetSymbol.USDC),
+				amount: Amount.fromRaw(5_000_000n, ChainFamily.EVM),
+				from: OWNER,
+				recipient: RECIPIENT_EVM,
+				maxFee: 6_000n,
+				minFinalityThreshold: 1000,
+				destinationCaller: OWNER,
+			});
+			if (!isRawEvm(tx)) {
+				throw new Error();
+			}
+			const decoded = decodeFunctionData({
+				abi: TOKEN_MESSENGER_V2_ABI,
+				data: tx.data,
+			});
+			expect(decoded.args[4]).toBe(
+				`0x000000000000000000000000${OWNER.slice(2).toLowerCase()}`,
+			);
+		});
+
 		it("encodes depositForBurnWithHook for EVM→Stellar", async () => {
 			const forwarder = stellar.cctpForwarder!;
 			const hookData: Hex = "0x1234";
@@ -182,6 +206,21 @@ describe("EvmChainConnector — reads (mocked viem client)", () => {
 			readContract,
 			getBalance,
 		});
+	});
+
+	it("isMessageReceived reads usedNonces on the MessageTransmitter", async () => {
+		const nonce = `0x${"59".repeat(32)}` as Hex;
+		readContract.mockResolvedValueOnce(1n).mockResolvedValueOnce(0n);
+		expect(await connector.isMessageReceived({ network: arb, nonce })).toBe(
+			true,
+		);
+		expect(await connector.isMessageReceived({ network: arb, nonce })).toBe(
+			false,
+		);
+		const call = readContract.mock.calls[0][0];
+		expect(call.address).toBe(arb.messageTransmitter);
+		expect(call.functionName).toBe("usedNonces");
+		expect(call.args).toEqual([nonce]);
 	});
 
 	it("getAllowance reads USDC.allowance and wraps as USDC Amount", async () => {

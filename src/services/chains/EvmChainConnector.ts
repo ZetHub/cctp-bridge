@@ -29,6 +29,7 @@ import type {
 	GetNativeBalanceOnChainParams,
 	GetTokenBalanceOnChainParams,
 	IChainConnector,
+	IsMessageReceivedOnChainParams,
 } from "../../ports/IChainConnector";
 
 const ZERO_BYTES32: Hex =
@@ -95,7 +96,9 @@ export class EvmChainConnector implements IChainConnector {
 					destination.cctpDomain,
 					mintRecipient,
 					token.address as Hex,
-					ZERO_BYTES32,
+					params.destinationCaller
+						? CctpEncoder.evmAddressToBytes32(params.destinationCaller)
+						: ZERO_BYTES32,
 					maxFee,
 					params.minFinalityThreshold,
 				],
@@ -161,6 +164,21 @@ export class EvmChainConnector implements IChainConnector {
 		const client = this.clientFor(network);
 		const raw = await client.getBalance({ address: owner as Hex });
 		return Amount.fromRawWithDecimals(raw, 18);
+	}
+
+	async isMessageReceived(
+		params: IsMessageReceivedOnChainParams,
+	): Promise<boolean> {
+		const { network, nonce } = params;
+		this.assertEvm(network);
+		const client = this.clientFor(network);
+		const used = (await client.readContract({
+			address: network.messageTransmitter as Hex,
+			abi: MESSAGE_TRANSMITTER_V2_ABI,
+			functionName: "usedNonces",
+			args: [nonce],
+		})) as bigint;
+		return used !== 0n;
 	}
 
 	private clientFor(network: Network): PublicClient {

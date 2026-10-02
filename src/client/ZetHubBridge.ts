@@ -34,6 +34,7 @@ import {
 	type NetworkRegistry,
 	NetworkService,
 } from "../services/networks/NetworkService";
+import { bytes32Schema } from "../validation/schemas";
 
 /* ─────────────────────────────  Options  ───────────────────────────── */
 
@@ -79,6 +80,11 @@ export interface GetAllowanceParams {
 	owner: string;
 }
 
+export interface IsMessageReceivedParams {
+	destinationToken: TokenWithChainDetails;
+	eventNonce: string;
+}
+
 export interface BridgeQuoteParams {
 	sourceToken: TokenWithChainDetails;
 	destinationToken: TokenWithChainDetails;
@@ -119,6 +125,7 @@ export interface BridgeAPI {
 	getAllowance(params: GetAllowanceParams): Promise<string>;
 	checkAllowance(params: CheckAllowanceParams): Promise<boolean>;
 	quote(params: BridgeQuoteParams): Promise<BridgeQuote>;
+	isMessageReceived(params: IsMessageReceivedParams): Promise<boolean>;
 	hasTrustline(params: {
 		token: TokenWithChainDetails;
 		address: string;
@@ -286,6 +293,19 @@ export class ZetHubBridge {
 					destinationDomain: destination.cctpDomain,
 					minFinalityThreshold:
 						params.minFinalityThreshold ?? FinalityThreshold.FAST,
+				});
+			},
+			isMessageReceived: async (
+				params: IsMessageReceivedParams,
+			): Promise<boolean> => {
+				const { destinationToken, eventNonce } = params;
+				if (!bytes32Schema.safeParse(eventNonce).success) {
+					throw new BridgeError("NONCE_INVALID");
+				}
+				const network = destinationToken.network;
+				return this.connectorFor(network).isMessageReceived({
+					network,
+					nonce: eventNonce as `0x${string}`,
 				});
 			},
 			hasTrustline: async (params: {

@@ -35,6 +35,8 @@ export interface IChainConnector {
 
 	/** Native (gas) token balance for `owner`. */
 	getNativeBalance(params: GetNativeBalanceOnChainParams): Promise<Amount>;
+
+	isMessageReceived(params: IsMessageReceivedOnChainParams): Promise<boolean>;
 }
 
 export interface BuildApproveTxParams {
@@ -54,6 +56,7 @@ export interface BuildBurnTxParams {
 	readonly recipient: string;
 	readonly maxFee: bigint;
 	readonly minFinalityThreshold: number;
+	readonly destinationCaller?: string;
 	readonly hookData?: `0x${string}`;
 	readonly memo?: BridgeMemo;
 }
@@ -81,4 +84,9 @@ export interface GetTokenBalanceOnChainParams {
 export interface GetNativeBalanceOnChainParams {
 	readonly network: Network;
 	readonly owner: string;
+}
+
+export interface IsMessageReceivedOnChainParams {
+	readonly network: Network;
+	readonly nonce: `0x${string}`;
 }

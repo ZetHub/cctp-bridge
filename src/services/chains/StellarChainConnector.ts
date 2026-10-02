@@ -27,11 +27,14 @@ import type {
 	GetNativeBalanceOnChainParams,
 	GetTokenBalanceOnChainParams,
 	IChainConnector,
+	IsMessageReceivedOnChainParams,
 } from "../../ports/IChainConnector";
 
 const DEFAULT_APPROVAL_EXPIRATION_LEDGERS = 100_000;
 const SOROBAN_FEE = "1000000";
 const TX_TIMEOUT_SECONDS = 180;
+const SIMULATION_SOURCE =
+	"GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 /** i128::MAX. Passed to Soroban `approve` when the caller requests an
  *  unlimited allowance (`amount` omitted). */
 const I128_MAX = (1n << 127n) - 1n;
@@ -107,7 +110,13 @@ export class StellarChainConnector implements IChainConnector {
 				xdr.ScVal.scvU32(destination.cctpDomain),
 				xdr.ScVal.scvBytes(mintRecipient),
 				new Contract(token.address).address().toScVal(),
-				xdr.ScVal.scvBytes(StellarCodec.hexToBuffer(this.zeroBytes32)),
+				xdr.ScVal.scvBytes(
+					StellarCodec.hexToBuffer(
+						params.destinationCaller
+							? CctpEncoder.evmAddressToBytes32(params.destinationCaller)
+							: this.zeroBytes32,
+					),
+				),
 				xdr.ScVal.scvI128(StellarCodec.i128(maxFee)),
 				xdr.ScVal.scvU32(params.minFinalityThreshold),
 			);
@@ -241,6 +250,40 @@ export class StellarChainConnector implements IChainConnector {
 			const native = balances?.find((b) => b.asset_type === "native");
 			const stroops = native ? Math.round(Number(native.balance) * 1e7) : 0;
 			return Amount.fromRawWithDecimals(BigInt(stroops), 7);
+		});
+	}
+
+	async isMessageReceived(
+		params: IsMessageReceivedOnChainParams,
+	): Promise<boolean> {
+		const { network, nonce } = params;
+		this.assertStellar(network);
+		const passphrase = StellarPassphrase.for(network);
+		const contract = new Contract(network.messageTransmitter);
+		const account = new Account(SIMULATION_SOURCE, "0");
+
+		return this.stellarRpc.run(network, async (server) => {
+			const tx = new TransactionBuilder(account, {
+				fee: "100",
+				networkPassphrase: passphrase,
+			})
+				.addOperation(
+					contract.call(
+						"is_nonce_used",
+						xdr.ScVal.scvBytes(StellarCodec.hexToBuffer(nonce)),
+					),
+				)
+				.setTimeout(30)
+				.build();
+
+			const sim = await server.simulateTransaction(tx);
+			if (rpc.Api.isSimulationError(sim)) {
+				throw new BridgeError("RPC_ERROR", sim.error);
+			}
+			if (!sim.result) {
+				throw new BridgeError("RPC_ERROR");
+			}
+			return scValToNative(sim.result.retval) === true;
 		});
 	}
 

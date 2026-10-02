@@ -4,6 +4,7 @@ import {
 	Networks,
 	TransactionBuilder,
 	nativeToScVal,
+	scValToNative,
 	xdr,
 	type rpc,
 } from "@stellar/stellar-sdk";
@@ -83,6 +84,11 @@ function readInvocation(hostFn: xdr.HostFunction): {
 	};
 }
 
+function i128Arg(arg: xdr.ScVal): bigint {
+	expect(arg.switch().name).toBe("scvI128");
+	return scValToNative(arg) as bigint;
+}
+
 describe("StellarChainConnector — approve", () => {
 	let connector: StellarChainConnector;
 
@@ -105,6 +111,34 @@ describe("StellarChainConnector — approve", () => {
 		expect(invocation.contractAddress).toBe(
 			stellar.token(AssetSymbol.USDC).address,
 		);
+	});
+
+	it("approves the amount in 7-decimal Stellar subunits", async () => {
+		const tx = await connector.buildApproveTx({
+			network: stellar,
+			token: stellar.token(AssetSymbol.USDC),
+			owner: SENDER_G,
+			amount: Amount.fromHuman("1", ChainFamily.STELLAR),
+		});
+		if (!isRawSoroban(tx)) {
+			throw new Error();
+		}
+		const invocation = readInvocation(decodeInvoke(tx.xdr));
+		expect(i128Arg(invocation.args[2])).toBe(10_000_000n);
+	});
+
+	it("rescales a 6-decimal amount to Stellar subunits", async () => {
+		const tx = await connector.buildApproveTx({
+			network: stellar,
+			token: stellar.token(AssetSymbol.USDC),
+			owner: SENDER_G,
+			amount: Amount.fromHuman("1", ChainFamily.EVM),
+		});
+		if (!isRawSoroban(tx)) {
+			throw new Error();
+		}
+		const invocation = readInvocation(decodeInvoke(tx.xdr));
+		expect(i128Arg(invocation.args[2])).toBe(10_000_000n);
 	});
 });
 
@@ -150,6 +184,25 @@ describe("StellarChainConnector — burn", () => {
 		if (!isRawSoroban(tx)) throw new Error();
 		const invocation = readInvocation(decodeInvoke(tx.xdr));
 		expect(invocation.contractAddress).toBe(stellar.tokenMessenger);
+	});
+
+	it("burns the amount and max_fee in 7-decimal Stellar subunits", async () => {
+		const tx = await connector.buildBurnTx({
+			source: stellar,
+			destination: base,
+			token: stellar.token(AssetSymbol.USDC),
+			amount: Amount.fromHuman("1", ChainFamily.STELLAR),
+			from: SENDER_G,
+			recipient: RECIPIENT_EVM,
+			maxFee: 1_560n,
+			minFinalityThreshold: 1000,
+		});
+		if (!isRawSoroban(tx)) {
+			throw new Error();
+		}
+		const invocation = readInvocation(decodeInvoke(tx.xdr));
+		expect(i128Arg(invocation.args[1])).toBe(10_000_000n);
+		expect(i128Arg(invocation.args[6])).toBe(1_560n);
 	});
 });
 

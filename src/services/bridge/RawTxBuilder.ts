@@ -108,7 +108,11 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			);
 		}
 
-		const parsedAmount = this.parseAmount(amount, sourceToken);
+		const token = this.toTokenAsset(sourceToken);
+		const burnAmount = this.toBurnAmount(
+			this.parseAmount(amount, sourceToken),
+			token,
+		);
 		const minFinalityThreshold =
 			params.minFinalityThreshold ?? FinalityThreshold.FAST;
 
@@ -118,18 +122,15 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			destinationDomain: destination.cctpDomain,
 			minFinalityThreshold,
 		});
-		const maxFee = FeeMath.maxFeeWithBuffer(
-			parsedAmount.scaleTo(CCTP_AMOUNT_DECIMALS).raw,
-			quote.feeBps,
-		);
+		const maxFee = FeeMath.maxFeeWithBuffer(burnAmount.raw, quote.feeBps);
 
 		const hookData = this.hookDataFor(source, destination, toAccountAddress);
 		const connector = this.connectorFor(source);
 		return connector.buildBurnTx({
 			source,
 			destination,
-			token: this.toTokenAsset(sourceToken),
-			amount: parsedAmount,
+			token,
+			amount: burnAmount,
 			from: fromAccountAddress,
 			recipient: this.recipientFor(source, destination, toAccountAddress),
 			maxFee,
@@ -202,6 +203,19 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			return amount;
 		}
 		return Amount.fromHuman(String(amount), token.network.family);
+	}
+
+	/** The amount in source-token subunits, cut to the precision a CCTP message
+	 *  carries. On Stellar this drops the 7th decimal, which the
+	 *  TokenMessenger would leave in the sender's account anyway. */
+	private toBurnAmount(amount: Amount, token: TokenAsset): Amount {
+		const burnAmount = amount
+			.scaleTo(CCTP_AMOUNT_DECIMALS)
+			.scaleTo(token.decimals);
+		if (burnAmount.raw <= 0n) {
+			throw new BridgeError("AMOUNT_TOO_SMALL");
+		}
+		return burnAmount;
 	}
 
 	private toTokenAsset(token: TokenWithChainDetails): TokenAsset {

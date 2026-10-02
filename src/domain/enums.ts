@@ -32,6 +32,13 @@ export const FinalityThreshold = {
 export type FinalityThreshold =
 	(typeof FinalityThreshold)[keyof typeof FinalityThreshold];
 
+export const RpcMode = {
+	PREPEND: "prepend",
+	REPLACE: "replace",
+} as const;
+
+export type RpcMode = (typeof RpcMode)[keyof typeof RpcMode];
+
 export const BridgeSide = {
 	SOURCE: "source",
 	DESTINATION: "destination",

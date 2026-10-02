@@ -1,6 +1,10 @@
 import { rpc } from "@stellar/stellar-sdk";
 import type { Network } from "../domain/Network";
 import { BridgeError } from "../errors";
+import {
+	httpTransportErrorSchema,
+	jsonRpcErrorSchema,
+} from "../validation/schemas";
 
 export type StellarRpcOp<T> = (server: rpc.Server, url: string) => Promise<T>;
 
@@ -26,9 +30,24 @@ export class StellarRpc {
 			try {
 				return await op(this.serverFor(url), url);
 			} catch (err) {
+				if (!this.isTransportError(err)) {
+					throw this.toBridgeError(err);
+				}
 				lastErr = err;
 			}
 		}
-		throw BridgeError.from(lastErr, "RPC_ERROR");
+		throw this.toBridgeError(lastErr);
+	}
+
+	private isTransportError(err: unknown): boolean {
+		return httpTransportErrorSchema.safeParse(err).success;
+	}
+
+	private toBridgeError(err: unknown): BridgeError {
+		const rpcError = jsonRpcErrorSchema.safeParse(err);
+		if (rpcError.success) {
+			return new BridgeError("RPC_ERROR", rpcError.data.message, err);
+		}
+		return BridgeError.from(err, "RPC_ERROR");
 	}
 }

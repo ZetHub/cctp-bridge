@@ -1,5 +1,6 @@
 import { CctpEncoder } from "../../cctp/CctpEncoder";
 import { FeeMath } from "../../cctp/FeeMath";
+import { Address } from "../../domain/Address";
 import { Amount } from "../../domain/Amount";
 import type { BridgeMemo } from "../../domain/BridgeMemo";
 import {
@@ -12,10 +13,15 @@ import type { NetworkIdInput } from "../../domain/NetworkId";
 import type { RawTransaction } from "../../domain/RawTransaction";
 import { CCTP_AMOUNT_DECIMALS } from "../../domain/Token";
 import type { TokenAsset } from "../../domain/TokenAsset";
-import { BridgeError } from "../../errors";
+import { BridgeError, type ErrorCode } from "../../errors";
 import type { IChainConnector } from "../../ports/IChainConnector";
 import type { IFeeService } from "../../ports/IFeeService";
 import type { INetworkService } from "../../ports/INetworkService";
+
+const INVALID_RECIPIENT_CODE: Record<ChainFamily, ErrorCode> = {
+	[ChainFamily.EVM]: "RECIPIENT_INVALID_EVM",
+	[ChainFamily.STELLAR]: "RECIPIENT_INVALID_STELLAR",
+};
 
 export interface TokenWithChainDetails {
 	readonly symbol: AssetSymbol;
@@ -108,6 +114,7 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			);
 		}
 
+		this.assertRecipient(destination, toAccountAddress);
 		const token = this.toTokenAsset(sourceToken);
 		const burnAmount = this.toBurnAmount(
 			this.parseAmount(amount, sourceToken),
@@ -176,6 +183,15 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			return CctpEncoder.forwarderHook(toAccountAddress);
 		}
 		return undefined;
+	}
+
+	private assertRecipient(destination: Network, recipient: string): void {
+		if (!recipient) {
+			throw new BridgeError("RECIPIENT_REQUIRED");
+		}
+		if (!Address.validate(recipient, destination.family).valid) {
+			throw new BridgeError(INVALID_RECIPIENT_CODE[destination.family]);
+		}
 	}
 
 	private recipientFor(

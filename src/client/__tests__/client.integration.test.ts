@@ -280,7 +280,7 @@ describe("ZetHubBridge — rawTxBuilder wiring", () => {
 			destinationToken: destination,
 			amount: "1.0",
 			fromAccountAddress: "0xfrom",
-			toAccountAddress: "0xto",
+			toAccountAddress: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
 		});
 		expect(tx).toBeInstanceOf(RawEvmTransaction);
 		// evm.seenTokenBalance was not called for a send, but buildBurnTx was

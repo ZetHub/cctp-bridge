@@ -81,6 +81,26 @@ describe("Address", () => {
 		expect(Address.validate("bad", ChainFamily.STELLAR).valid).toBe(false);
 	});
 
+	it("accepts G, C and 69-character M Stellar addresses", () => {
+		expect(Address.isStellar(stellar)).toBe(true);
+		expect(
+			Address.isStellar(
+				"CA66Q2WFBND6V4UEB7RD4SAXSVIWMD6RA4X3U32ELVFGXV5PJK4T4VSZ",
+			),
+		).toBe(true);
+		expect(
+			Address.isStellar(
+				"MBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLEAAAAAAAAAAAFJN3W",
+			),
+		).toBe(true);
+	});
+
+	it("rejects addresses whose checksum does not match", () => {
+		expect(Address.isStellar(stellar.replace("BBD47", "BBD48"))).toBe(false);
+		expect(Address.isEvm(evm.replace("C621", "c621"))).toBe(false);
+		expect(Address.isEvm(evm.toLowerCase())).toBe(true);
+	});
+
 	it("constructs and compares", () => {
 		const a = Address.for(evm, ChainFamily.EVM);
 		expect(a.isEvm).toBe(true);

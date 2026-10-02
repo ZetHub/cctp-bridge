@@ -29,7 +29,7 @@ const stellar = networks.byId(Environment.MAINNET, NetworkId.STELLAR)!;
 const base = networks.byId(Environment.MAINNET, NetworkId.BASE)!;
 
 const SENDER_G = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
-const RECIPIENT_EVM = "0x9F70008A83912b19B3E64B58D5f4A08bBd7b3F0e";
+const RECIPIENT_EVM = "0x9f70008A83912b19B3e64B58d5F4A08bBD7b3F0e";
 
 interface FakeServerOptions {
 	balance?: bigint;

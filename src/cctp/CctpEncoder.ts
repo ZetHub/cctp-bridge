@@ -1,7 +1,8 @@
 import { StrKey } from "@stellar/stellar-sdk";
 import type { Hex } from "viem";
+import { BridgeError } from "../errors";
 import { ValidationMessage } from "../validation/messages";
-import { stellarStrkeySchema } from "../validation/schemas";
+import { evmAddressSchema, stellarStrkeySchema } from "../validation/schemas";
 
 /**
  * Encoders for the byte-level values CCTP contracts expect: bytes32 mint
@@ -45,7 +46,13 @@ export class CctpEncoder {
 		return `0x${CctpEncoder.bytesToHex(raw)}`;
 	}
 
-	static evmAddressToBytes32(address: Hex): Hex {
+	/** Left-pads a 20-byte EVM address to bytes32. Rejects anything that is
+	 *  not a valid address, since padding a typo yields a different, valid
+	 *  recipient and the burn cannot be reversed. */
+	static evmAddressToBytes32(address: string): Hex {
+		if (!evmAddressSchema.safeParse(address).success) {
+			throw new BridgeError("RECIPIENT_INVALID_EVM");
+		}
 		const stripped = address.toLowerCase().replace(/^0x/, "");
 		return `0x${stripped.padStart(64, "0")}`;
 	}

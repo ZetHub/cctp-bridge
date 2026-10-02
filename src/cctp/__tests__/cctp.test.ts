@@ -17,6 +17,19 @@ describe("CctpEncoder", () => {
 		);
 	});
 
+	it("refuses to pad an invalid EVM address", () => {
+		for (const bad of [
+			"0x28b5a0e9C621a5BadaA536219b3a228C8168cf5",
+			"0x28b5a0e9c621a5badaa536219b3a228c8168cf5dd",
+			"0x28b5a0e9C621a5BadaA536219b3a228C8168CF5d",
+			"28b5a0e9c621a5badaa536219b3a228c8168cf5d",
+		]) {
+			expect(() => CctpEncoder.evmAddressToBytes32(bad)).toThrowError(
+				expect.objectContaining({ code: "RECIPIENT_INVALID_EVM" }),
+			);
+		}
+	});
+
 	it("decodes Stellar G/C addresses to 32 bytes", () => {
 		const g = CctpEncoder.stellarAddressToBytes32(
 			"GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",

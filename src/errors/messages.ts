@@ -7,9 +7,9 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 	AMOUNT_EXCEEDS_BALANCE: "Amount exceeds your USDC balance.",
 	RECIPIENT_REQUIRED: "Enter a recipient address.",
 	RECIPIENT_INVALID_EVM:
-		"Recipient must be a 0x-prefixed Ethereum-style address (40 hex characters).",
+		"Recipient must be a 0x-prefixed Ethereum-style address (40 hex characters, valid checksum).",
 	RECIPIENT_INVALID_STELLAR:
-		"Recipient must be a Stellar address starting with G (account) or C (contract).",
+		"Recipient must be a Stellar G (account), C (contract) or M (muxed) address with a valid checksum.",
 	MEMO_INVALID_TEXT: "Memo text must be 28 characters or fewer (ASCII).",
 	MEMO_INVALID_ID: "Memo ID must be an unsigned integer.",
 	MEMO_INVALID_HASH: "Memo hash/return must be 32 bytes (64 hex characters).",

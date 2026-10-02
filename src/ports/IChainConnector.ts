@@ -51,6 +51,7 @@ export interface BuildBurnTxParams {
 	readonly amount: Amount;
 	readonly from: string;
 	readonly recipient: string;
+	/** In source-token subunits, the same unit as `amount` (7 dp on Stellar). */
 	readonly maxFee: bigint;
 	readonly minFinalityThreshold: number;
 	readonly hookData?: `0x${string}`;

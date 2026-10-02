@@ -45,7 +45,7 @@ export class EvmChainConnector implements IChainConnector {
 		const { network, token, owner, amount } = params;
 		this.assertEvm(network);
 		const chainId = this.requireChainId(network);
-		const value = amount ? amount.raw : maxUint256;
+		const value = amount ? amount.scaleTo(token.decimals).raw : maxUint256;
 		const data = encodeFunctionData({
 			abi: USDC_ABI,
 			functionName: "approve",
@@ -64,6 +64,7 @@ export class EvmChainConnector implements IChainConnector {
 			params;
 		this.assertEvm(source);
 		const chainId = this.requireChainId(source);
+		const burnAmount = amount.scaleTo(token.decimals).raw;
 		const mintRecipient =
 			destination.family === ChainFamily.STELLAR
 				? CctpEncoder.stellarAddressToBytes32(recipient)
@@ -75,7 +76,7 @@ export class EvmChainConnector implements IChainConnector {
 				abi: TOKEN_MESSENGER_V2_ABI,
 				functionName: "depositForBurnWithHook",
 				args: [
-					amount.raw,
+					burnAmount,
 					destination.cctpDomain,
 					mintRecipient,
 					token.address as Hex,
@@ -90,7 +91,7 @@ export class EvmChainConnector implements IChainConnector {
 				abi: TOKEN_MESSENGER_V2_ABI,
 				functionName: "depositForBurn",
 				args: [
-					amount.raw,
+					burnAmount,
 					destination.cctpDomain,
 					mintRecipient,
 					token.address as Hex,

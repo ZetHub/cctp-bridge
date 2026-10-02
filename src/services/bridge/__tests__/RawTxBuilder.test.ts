@@ -197,6 +197,31 @@ describe("DefaultRawTxBuilder", () => {
 			expect(evm.seen.burn[0].maxFee).toBe(156_000n);
 		});
 
+		it("rescales an Amount built for another family to the source token", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.BASE),
+				destinationToken: tokenFor(NetworkId.ARBITRUM),
+				amount: Amount.fromHuman("1", ChainFamily.STELLAR),
+				fromAccountAddress: "0xfrom",
+				toAccountAddress: "0xrecipient",
+			});
+			expect(evm.seen.burn[0].amount.raw).toBe(1_000_000n);
+			expect(evm.seen.burn[0].amount.decimals).toBe(6);
+		});
+
+		it("throws AMOUNT_TOO_SMALL for a zero amount", async () => {
+			await expect(
+				builder.send({
+					sourceToken: tokenFor(NetworkId.BASE),
+					destinationToken: tokenFor(NetworkId.ARBITRUM),
+					amount: "0",
+					fromAccountAddress: "0xfrom",
+					toAccountAddress: "0xrecipient",
+				}),
+			).rejects.toMatchObject({ code: "AMOUNT_TOO_SMALL" });
+			expect(fees.seen).toHaveLength(0);
+		});
+
 		it("defaults min finality to FAST", async () => {
 			await builder.send({
 				sourceToken: tokenFor(NetworkId.BASE),
@@ -264,6 +289,46 @@ describe("DefaultRawTxBuilder", () => {
 			const call = stellar.seen.burn[0];
 			expect(call.hookData).toBeUndefined();
 			expect(call.recipient).toBe("0xrecipient");
+		});
+
+		it("burns in 7-decimal subunits and sizes maxFee in the same unit", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.STELLAR),
+				destinationToken: tokenFor(NetworkId.BASE),
+				amount: "1000",
+				fromAccountAddress: "GAAA",
+				toAccountAddress: "0xrecipient",
+			});
+			const call = stellar.seen.burn[0];
+			expect(call.amount.raw).toBe(10_000_000_000n);
+			expect(call.amount.decimals).toBe(7);
+			// 1.3 bps on 1000 USDC (10_000_000_000 subunits) = 1_300_000, buffered × 1.2
+			expect(call.maxFee).toBe(1_560_000n);
+		});
+
+		it("drops the 7th decimal that a CCTP message cannot carry", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.STELLAR),
+				destinationToken: tokenFor(NetworkId.BASE),
+				amount: "1.2345678",
+				fromAccountAddress: "GAAA",
+				toAccountAddress: "0xrecipient",
+			});
+			expect(stellar.seen.burn[0].amount.raw).toBe(12_345_670n);
+		});
+
+		it("throws AMOUNT_TOO_SMALL when only the 7th decimal is set", async () => {
+			await expect(
+				builder.send({
+					sourceToken: tokenFor(NetworkId.STELLAR),
+					destinationToken: tokenFor(NetworkId.BASE),
+					amount: "0.0000009",
+					fromAccountAddress: "GAAA",
+					toAccountAddress: "0xrecipient",
+				}),
+			).rejects.toMatchObject({ code: "AMOUNT_TOO_SMALL" });
+			expect(fees.seen).toHaveLength(0);
+			expect(stellar.seen.burn).toHaveLength(0);
 		});
 
 		it("propagates the memo through to the Stellar connector", async () => {

@@ -17,7 +17,6 @@ import {
 	RawSorobanTransaction,
 	type RawTransaction,
 } from "../../domain/RawTransaction";
-import { CCTP_AMOUNT_DECIMALS } from "../../domain/Token";
 import { BridgeError } from "../../errors";
 import type {
 	BuildApproveTxParams,
@@ -57,7 +56,7 @@ export class StellarChainConnector implements IChainConnector {
 
 			const usdc = new Contract(token.address);
 			const approveAmount = amount
-				? amount.scaleTo(CCTP_AMOUNT_DECIMALS).raw
+				? amount.scaleTo(token.decimals).raw
 				: I128_MAX;
 			const op = usdc.call(
 				"approve",
@@ -93,7 +92,7 @@ export class StellarChainConnector implements IChainConnector {
 		return this.stellarRpc.run(source, async (server) => {
 			const fetched = await server.getAccount(from);
 			const acct = new Account(fetched.accountId(), fetched.sequenceNumber());
-			const burnAmount = amount.scaleTo(CCTP_AMOUNT_DECIMALS).raw;
+			const burnAmount = amount.scaleTo(token.decimals).raw;
 			const mintRecipient = StellarCodec.hexToBuffer(
 				this.evmAddressToBytes32(recipient),
 			);

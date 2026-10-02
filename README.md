@@ -72,6 +72,27 @@ await mySignAndBroadcast(mintTx);
 
 See the [Signing transactions guide](https://bridge-docs.zethub.cloud/docs/getting-started/signing) for the `mySignAndBroadcast` glue with viem, wagmi, ethers, Freighter, or the Stellar Wallets Kit.
 
+## Approvals
+
+`approve()` lets the source TokenMessenger move USDC from the owner. Pass the `amount` you plan to burn. To grant an unlimited allowance instead, pass `unlimited: true`. If you pass neither, `approve()` throws `APPROVAL_AMOUNT_REQUIRED`. An `amount` of `0` revokes the allowance.
+
+```ts
+await sdk.bridge.rawTxBuilder.approve({ token, owner, amount: "25" });
+
+await sdk.bridge.rawTxBuilder.approve({
+  token,
+  owner,
+  unlimited: true,
+  expiresInLedgers: 17_280,
+});
+```
+
+On Stellar, an allowance expires. By default it lasts 100,000 ledgers after the approval (about 6 days at 5 to 6 seconds per ledger). Set `expiresInLedgers` to change it, up to Stellar's maximum entry lifetime of 3,110,400 ledgers (about 180 days). EVM allowances do not expire.
+
+## Stellar amounts
+
+USDC has 7 decimals on Stellar, but a CCTP message carries 6. A burn from Stellar sends only the first 6 decimals, and the 7th stays in the sender's account. For example, `send()` with `amount: "1.2345678"` burns 1.234567 USDC, and 0.0000008 USDC stays on Stellar. An amount below 0.000001 USDC throws `AMOUNT_TOO_SMALL`.
+
 ## Design
 
 - **No signer injection.** Every write returns a typed `RawEvmTransaction` or `RawSorobanTransaction`. You sign it however you already sign transactions.

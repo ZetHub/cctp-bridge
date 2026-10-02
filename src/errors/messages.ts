@@ -12,6 +12,8 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 	APPROVAL_EXPIRATION_INVALID:
 		"expiresInLedgers must be a positive whole number of ledgers.",
 	MAX_FEE_INVALID: "maxFee must be zero or more, and less than the amount.",
+	SOROBAN_FEE_INVALID:
+		"sorobanInclusionFee must be a positive whole number of stroops.",
 	RECIPIENT_REQUIRED: "Enter a recipient address.",
 	RECIPIENT_INVALID_EVM:
 		"Recipient must be a 0x-prefixed Ethereum-style address (40 hex characters, valid checksum).",

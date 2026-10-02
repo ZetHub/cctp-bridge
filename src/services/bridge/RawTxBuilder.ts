@@ -17,7 +17,7 @@ import { BridgeError, type ErrorCode } from "../../errors";
 import type { IChainConnector } from "../../ports/IChainConnector";
 import type { IFeeService } from "../../ports/IFeeService";
 import type { INetworkService } from "../../ports/INetworkService";
-import { ledgerCountSchema } from "../../validation/schemas";
+import { ledgerCountSchema, stroopsSchema } from "../../validation/schemas";
 
 const INVALID_RECIPIENT_CODE: Record<ChainFamily, ErrorCode> = {
 	[ChainFamily.EVM]: "RECIPIENT_INVALID_EVM",
@@ -40,6 +40,7 @@ interface ApproveTxBaseParams {
 	token: TokenWithChainDetails;
 	owner: string;
 	expiresInLedgers?: number;
+	sorobanInclusionFee?: number;
 }
 
 export interface ApproveExactTxParams extends ApproveTxBaseParams {
@@ -64,6 +65,7 @@ export interface SendTxParams {
 	maxFee?: Amount | string | number;
 	destinationCaller?: string;
 	memo?: BridgeMemo;
+	sorobanInclusionFee?: number;
 }
 
 export interface ReceiveTxParams {
@@ -71,6 +73,7 @@ export interface ReceiveTxParams {
 	toAccountAddress: string;
 	message: `0x${string}`;
 	attestation: `0x${string}`;
+	sorobanInclusionFee?: number;
 }
 
 export interface RawTxBuilder {
@@ -92,7 +95,8 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 	constructor(private readonly deps: RawTxBuilderDeps) {}
 
 	async approve(params: ApproveTxParams): Promise<RawTransaction> {
-		const { token, owner, expiresInLedgers } = params;
+		const { token, owner, expiresInLedgers, sorobanInclusionFee } = params;
+		this.assertSorobanFee(sorobanInclusionFee);
 		const amount = this.approvalAmount(params);
 		if (
 			expiresInLedgers !== undefined &&
@@ -107,6 +111,7 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			owner,
 			amount,
 			expiresInLedgers,
+			sorobanInclusionFee,
 		});
 	}
 
@@ -135,6 +140,7 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			);
 		}
 
+		this.assertSorobanFee(params.sorobanInclusionFee);
 		this.assertRecipient(destination, toAccountAddress);
 		this.assertDestinationCaller(destination, params.destinationCaller);
 		const token = this.toTokenAsset(sourceToken);
@@ -169,11 +175,13 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			destinationCaller: params.destinationCaller,
 			hookData,
 			memo,
+			sorobanInclusionFee: params.sorobanInclusionFee,
 		});
 	}
 
-	receive(params: ReceiveTxParams): Promise<RawTransaction> {
+	async receive(params: ReceiveTxParams): Promise<RawTransaction> {
 		const { destinationToken, toAccountAddress, message, attestation } = params;
+		this.assertSorobanFee(params.sorobanInclusionFee);
 		const destination = destinationToken.network;
 		const connector = this.connectorFor(destination);
 		return connector.buildReceiveTx({
@@ -182,7 +190,17 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			to: toAccountAddress,
 			message,
 			attestation,
+			sorobanInclusionFee: params.sorobanInclusionFee,
 		});
+	}
+
+	private assertSorobanFee(sorobanInclusionFee: number | undefined): void {
+		if (
+			sorobanInclusionFee !== undefined &&
+			!stroopsSchema.safeParse(sorobanInclusionFee).success
+		) {
+			throw new BridgeError("SOROBAN_FEE_INVALID");
+		}
 	}
 
 	private approvalAmount(params: ApproveTxParams): Amount | undefined {

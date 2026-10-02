@@ -201,6 +201,47 @@ describe("IrisAttestationService", () => {
 		});
 	});
 
+	it("waits at least one interval on 429 with Retry-After: 0", async () => {
+		stubFetch([
+			{ status: 429, headers: { "retry-after": "0" } },
+			{ body: COMPLETE },
+		]);
+		await wait(new IrisAttestationService());
+		expect(sleeps).toEqual([4000]);
+	});
+
+	it("aborts a request that hangs and retries it", async () => {
+		const hung = vi.fn(
+			(_url: string, init?: RequestInit) =>
+				new Promise<Response>((_resolve, reject) => {
+					init?.signal?.addEventListener("abort", () =>
+						reject(init.signal?.reason),
+					);
+				}),
+		);
+		globalThis.fetch = vi
+			.fn()
+			.mockImplementationOnce(hung)
+			.mockImplementationOnce(
+				async () =>
+					({
+						status: 200,
+						ok: true,
+						headers: new Headers(),
+						json: async () => COMPLETE,
+					}) as unknown as Response,
+			);
+		const onPoll = vi.fn();
+		const result = await wait(
+			new IrisAttestationService({ requestTimeoutMs: 20 }),
+			{},
+			onPoll,
+		);
+		expect(result.status).toBe("complete");
+		expect(hung).toHaveBeenCalledTimes(1);
+		expect(onPoll.mock.calls[0][0].error?.name).toBe("TimeoutError");
+	});
+
 	it("waits out the 5-minute block on 429 without Retry-After", async () => {
 		stubFetch([{ status: 429 }, { body: COMPLETE }]);
 		await wait(new IrisAttestationService());

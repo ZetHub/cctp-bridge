@@ -31,7 +31,7 @@ import type {
 } from "../../ports/IChainConnector";
 
 const DEFAULT_APPROVAL_EXPIRATION_LEDGERS = 100_000;
-const SOROBAN_FEE = "1000000";
+const DEFAULT_SOROBAN_INCLUSION_FEE = 1_000_000;
 const TX_TIMEOUT_SECONDS = 180;
 const SIMULATION_SOURCE =
 	"GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
@@ -72,7 +72,7 @@ export class StellarChainConnector implements IChainConnector {
 			);
 
 			const tx = new TransactionBuilder(acct, {
-				fee: SOROBAN_FEE,
+				fee: this.inclusionFee(params.sorobanInclusionFee),
 				networkPassphrase: passphrase,
 			})
 				.addOperation(op)
@@ -122,7 +122,7 @@ export class StellarChainConnector implements IChainConnector {
 			);
 
 			const builder = new TransactionBuilder(acct, {
-				fee: SOROBAN_FEE,
+				fee: this.inclusionFee(params.sorobanInclusionFee),
 				networkPassphrase: passphrase,
 			}).addOperation(op);
 			if (params.memo) {
@@ -163,7 +163,7 @@ export class StellarChainConnector implements IChainConnector {
 			);
 
 			const tx = new TransactionBuilder(acct, {
-				fee: SOROBAN_FEE,
+				fee: this.inclusionFee(params.sorobanInclusionFee),
 				networkPassphrase: passphrase,
 			})
 				.addOperation(op)
@@ -289,6 +289,10 @@ export class StellarChainConnector implements IChainConnector {
 
 	private readonly zeroBytes32 =
 		"0x0000000000000000000000000000000000000000000000000000000000000000";
+
+	private inclusionFee(sorobanInclusionFee: number | undefined): string {
+		return String(sorobanInclusionFee ?? DEFAULT_SOROBAN_INCLUSION_FEE);
+	}
 
 	private assertStellar(network: Network): void {
 		if (network.family !== ChainFamily.STELLAR) {

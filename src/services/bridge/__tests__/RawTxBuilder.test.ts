@@ -685,6 +685,72 @@ describe("DefaultRawTxBuilder", () => {
 		});
 	});
 
+	describe("sorobanInclusionFee", () => {
+		it("passes the fee through on approve, send and receive", async () => {
+			await builder.approve({
+				token: tokenFor(NetworkId.STELLAR),
+				owner: "GAAA",
+				amount: "1",
+				sorobanInclusionFee: 500,
+			});
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.STELLAR),
+				destinationToken: tokenFor(NetworkId.BASE),
+				amount: "1",
+				fromAccountAddress: "GAAA",
+				toAccountAddress: RECIPIENT_EVM,
+				sorobanInclusionFee: 500,
+			});
+			await builder.receive({
+				destinationToken: tokenFor(NetworkId.STELLAR),
+				toAccountAddress: "GAAA",
+				message: "0xdead",
+				attestation: "0xbeef",
+				sorobanInclusionFee: 500,
+			});
+			expect(stellar.seen.approve[0].sorobanInclusionFee).toBe(500);
+			expect(stellar.seen.burn[0].sorobanInclusionFee).toBe(500);
+			expect(stellar.seen.receive[0].sorobanInclusionFee).toBe(500);
+		});
+
+		for (const sorobanInclusionFee of [0, -1, 1.5]) {
+			it(`throws SOROBAN_FEE_INVALID for ${sorobanInclusionFee}`, async () => {
+				const invalid = { code: "SOROBAN_FEE_INVALID" };
+				await expect(
+					builder.approve({
+						token: tokenFor(NetworkId.STELLAR),
+						owner: "GAAA",
+						amount: "1",
+						sorobanInclusionFee,
+					}),
+				).rejects.toMatchObject(invalid);
+				await expect(
+					builder.send({
+						sourceToken: tokenFor(NetworkId.STELLAR),
+						destinationToken: tokenFor(NetworkId.BASE),
+						amount: "1",
+						fromAccountAddress: "GAAA",
+						toAccountAddress: RECIPIENT_EVM,
+						sorobanInclusionFee,
+					}),
+				).rejects.toMatchObject(invalid);
+				await expect(
+					builder.receive({
+						destinationToken: tokenFor(NetworkId.STELLAR),
+						toAccountAddress: "GAAA",
+						message: "0xdead",
+						attestation: "0xbeef",
+						sorobanInclusionFee,
+					}),
+				).rejects.toMatchObject(invalid);
+				expect(fees.seen).toHaveLength(0);
+				expect(stellar.seen.approve).toHaveLength(0);
+				expect(stellar.seen.burn).toHaveLength(0);
+				expect(stellar.seen.receive).toHaveLength(0);
+			});
+		}
+	});
+
 	describe("receive", () => {
 		it("routes to the destination connector", async () => {
 			await builder.receive({

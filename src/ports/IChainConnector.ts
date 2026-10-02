@@ -45,6 +45,7 @@ export interface BuildApproveTxParams {
 	readonly owner: string;
 	readonly amount: Amount | undefined;
 	readonly expiresInLedgers?: number;
+	readonly sorobanInclusionFee?: number;
 }
 
 export interface BuildBurnTxParams {
@@ -59,6 +60,7 @@ export interface BuildBurnTxParams {
 	readonly destinationCaller?: string;
 	readonly hookData?: `0x${string}`;
 	readonly memo?: BridgeMemo;
+	readonly sorobanInclusionFee?: number;
 }
 
 export interface BuildReceiveTxParams {
@@ -67,6 +69,7 @@ export interface BuildReceiveTxParams {
 	readonly to: string;
 	readonly message: `0x${string}`;
 	readonly attestation: `0x${string}`;
+	readonly sorobanInclusionFee?: number;
 }
 
 export interface GetAllowanceOnChainParams {

@@ -321,6 +321,58 @@ describe("StellarChainConnector — reads", () => {
 	});
 });
 
+describe("StellarChainConnector — inclusion fee", () => {
+	const connector = new StellarChainConnector(
+		new FakeStellarRpc(makeFakeServer()),
+	);
+	const feeOf = (txXdr: string) =>
+		TransactionBuilder.fromXDR(txXdr, Networks.PUBLIC).fee;
+
+	const builders = {
+		approve: (sorobanInclusionFee?: number) =>
+			connector.buildApproveTx({
+				network: stellar,
+				token: stellar.token(AssetSymbol.USDC),
+				owner: SENDER_G,
+				amount: Amount.fromHuman("1", ChainFamily.STELLAR),
+				sorobanInclusionFee,
+			}),
+		burn: (sorobanInclusionFee?: number) =>
+			connector.buildBurnTx({
+				source: stellar,
+				destination: base,
+				token: stellar.token(AssetSymbol.USDC),
+				amount: Amount.fromHuman("1", ChainFamily.STELLAR),
+				from: SENDER_G,
+				recipient: RECIPIENT_EVM,
+				maxFee: 0n,
+				minFinalityThreshold: 2000,
+				sorobanInclusionFee,
+			}),
+		receive: (sorobanInclusionFee?: number) =>
+			connector.buildReceiveTx({
+				destination: stellar,
+				token: stellar.token(AssetSymbol.USDC),
+				to: SENDER_G,
+				message: "0xdead",
+				attestation: "0xbeef",
+				sorobanInclusionFee,
+			}),
+	};
+
+	for (const [name, build] of Object.entries(builders)) {
+		it(`${name} uses the caller's inclusion fee, or 1_000_000 stroops`, async () => {
+			const custom = await build(250);
+			const fallback = await build();
+			if (!isRawSoroban(custom) || !isRawSoroban(fallback)) {
+				throw new Error();
+			}
+			expect(feeOf(custom.xdr)).toBe("250");
+			expect(feeOf(fallback.xdr)).toBe("1000000");
+		});
+	}
+});
+
 describe("StellarChainConnector — isMessageReceived", () => {
 	const nonce = `0x${"59".repeat(32)}` as `0x${string}`;
 

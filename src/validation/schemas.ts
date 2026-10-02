@@ -55,3 +55,5 @@ export const jsonRpcErrorSchema = z.object({
 });
 
 export const bytes32Schema = z.string().regex(/^0x[0-9a-fA-F]{64}$/);
+
+export const stroopsSchema = z.number().int().positive();

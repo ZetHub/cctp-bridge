@@ -7,6 +7,7 @@ import {
 	TransactionBuilder,
 	xdr,
 } from "@stellar/stellar-sdk";
+import { CctpEncoder } from "../../cctp/CctpEncoder";
 import { StellarCodec } from "../../cctp/StellarCodec";
 import { StellarPassphrase } from "../../cctp/StellarPassphrase";
 import type { StellarRpc } from "../../cctp/StellarRpc";
@@ -94,7 +95,7 @@ export class StellarChainConnector implements IChainConnector {
 			const acct = new Account(fetched.accountId(), fetched.sequenceNumber());
 			const burnAmount = amount.scaleTo(token.decimals).raw;
 			const mintRecipient = StellarCodec.hexToBuffer(
-				this.evmAddressToBytes32(recipient),
+				CctpEncoder.evmAddressToBytes32(recipient),
 			);
 
 			const tokenMessenger = new Contract(source.tokenMessenger);
@@ -244,11 +245,6 @@ export class StellarChainConnector implements IChainConnector {
 
 	private readonly zeroBytes32 =
 		"0x0000000000000000000000000000000000000000000000000000000000000000";
-
-	private evmAddressToBytes32(address: string): `0x${string}` {
-		const stripped = address.toLowerCase().replace(/^0x/, "");
-		return `0x${stripped.padStart(64, "0")}` as `0x${string}`;
-	}
 
 	private assertStellar(network: Network): void {
 		if (network.family !== ChainFamily.STELLAR) {

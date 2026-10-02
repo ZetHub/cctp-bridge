@@ -2,10 +2,12 @@ export const ValidationMessage = {
 	ADDRESS_REQUIRED: "Address required.",
 	INVALID_EVM_ADDRESS:
 		"Invalid EVM address (expected 0x followed by 40 hex characters).",
+	INVALID_EVM_CHECKSUM:
+		"Invalid EVM address checksum. Check the address for a typo, or pass it in lowercase.",
 	INVALID_STELLAR_ADDRESS:
-		"Invalid Stellar address (must start with G, C or M and be 56 characters).",
+		"Invalid Stellar address (expected a G account, C contract or M muxed account with a valid checksum).",
 	INVALID_STRKEY:
-		"Stellar address must start with G, C or M and be 56 characters.",
+		"Stellar address must be a G, C or M address with a valid checksum.",
 	INVALID_HEX: "Invalid hex string.",
 	ODD_HEX_LENGTH: "Hex string must have an even number of characters.",
 	INVALID_AMOUNT: "Enter a valid number.",

@@ -1,17 +1,29 @@
+import { StrKey } from "@stellar/stellar-sdk";
+import { isAddress } from "viem";
 import { z } from "zod";
 import { ValidationMessage } from "./messages";
 
+/** G account, C contract or M muxed account, with a valid checksum. */
+const isStellarAddress = (value: string): boolean =>
+	StrKey.isValidEd25519PublicKey(value) ||
+	StrKey.isValidContract(value) ||
+	StrKey.isValidMed25519PublicKey(value);
+
+/** 40 hex characters. A mixed-case address must pass its EIP-55 checksum. */
 export const evmAddressSchema = z
 	.string()
-	.regex(/^0x[a-fA-F0-9]{40}$/, ValidationMessage.INVALID_EVM_ADDRESS);
+	.regex(/^0x[a-fA-F0-9]{40}$/, ValidationMessage.INVALID_EVM_ADDRESS)
+	.refine((value) => isAddress(value), {
+		message: ValidationMessage.INVALID_EVM_CHECKSUM,
+	});
 
-export const stellarAddressSchema = z
-	.string()
-	.regex(/^[GCM][A-Z2-7]{55}$/, ValidationMessage.INVALID_STELLAR_ADDRESS);
+export const stellarAddressSchema = z.string().refine(isStellarAddress, {
+	message: ValidationMessage.INVALID_STELLAR_ADDRESS,
+});
 
 export const stellarStrkeySchema = z
 	.string()
-	.regex(/^[GCM][A-Z2-7]{55}$/, ValidationMessage.INVALID_STRKEY);
+	.refine(isStellarAddress, { message: ValidationMessage.INVALID_STRKEY });
 
 export const hexSchema = z
 	.string()

@@ -88,6 +88,12 @@ class FakeFeeService implements IFeeService {
 
 const networks = new NetworkService();
 
+const RECIPIENT_EVM = "0x9f70008A83912b19B3e64B58d5F4A08bBD7b3F0e";
+const RECIPIENT_STELLAR =
+	"GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+const RECIPIENT_MUXED =
+	"MBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLEAAAAAAAAAAAFJN3W";
+
 function tokenFor(
 	networkId: string,
 	env: Environment = Environment.MAINNET,
@@ -175,12 +181,12 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.ARBITRUM),
 				amount: "5.0",
 				fromAccountAddress: "0xfrom",
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 			});
 			expect(evm.seen.burn).toHaveLength(1);
 			const call = evm.seen.burn[0];
 			expect(call.hookData).toBeUndefined();
-			expect(call.recipient).toBe("0xrecipient");
+			expect(call.recipient).toBe(RECIPIENT_EVM);
 			expect(call.from).toBe("0xfrom");
 		});
 
@@ -190,7 +196,7 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.ARBITRUM),
 				amount: "1000",
 				fromAccountAddress: "0xfrom",
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 			});
 			expect(fees.seen).toHaveLength(1);
 			// 1.3 bps on 1000 USDC (1_000_000_000 subunits) = 130_000, buffered × 1.2 = 156_000
@@ -203,7 +209,7 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.ARBITRUM),
 				amount: Amount.fromHuman("1", ChainFamily.STELLAR),
 				fromAccountAddress: "0xfrom",
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 			});
 			expect(evm.seen.burn[0].amount.raw).toBe(1_000_000n);
 			expect(evm.seen.burn[0].amount.decimals).toBe(6);
@@ -216,7 +222,7 @@ describe("DefaultRawTxBuilder", () => {
 					destinationToken: tokenFor(NetworkId.ARBITRUM),
 					amount: "0",
 					fromAccountAddress: "0xfrom",
-					toAccountAddress: "0xrecipient",
+					toAccountAddress: RECIPIENT_EVM,
 				}),
 			).rejects.toMatchObject({ code: "AMOUNT_TOO_SMALL" });
 			expect(fees.seen).toHaveLength(0);
@@ -228,7 +234,7 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.ARBITRUM),
 				amount: "1.0",
 				fromAccountAddress: "0xfrom",
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 			});
 			expect(evm.seen.burn[0].minFinalityThreshold).toBe(FinalityThreshold.FAST);
 		});
@@ -241,8 +247,7 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.STELLAR),
 				amount: "5.0",
 				fromAccountAddress: "0xfrom",
-				toAccountAddress:
-					"GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+				toAccountAddress: RECIPIENT_STELLAR,
 			});
 			const call = evm.seen.burn[0];
 			expect(call.hookData).toBeDefined();
@@ -268,8 +273,7 @@ describe("DefaultRawTxBuilder", () => {
 					destinationToken: patchedDestination,
 					amount: "1.0",
 					fromAccountAddress: "0xfrom",
-					toAccountAddress:
-						"GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+					toAccountAddress: RECIPIENT_STELLAR,
 				}),
 			).rejects.toMatchObject({ code: "MISSING_FORWARDER" });
 		});
@@ -282,13 +286,13 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.BASE),
 				amount: "5.0",
 				fromAccountAddress: "GAAA",
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 			});
 			expect(stellar.seen.burn).toHaveLength(1);
 			expect(evm.seen.burn).toHaveLength(0);
 			const call = stellar.seen.burn[0];
 			expect(call.hookData).toBeUndefined();
-			expect(call.recipient).toBe("0xrecipient");
+			expect(call.recipient).toBe(RECIPIENT_EVM);
 		});
 
 		it("burns in 7-decimal subunits and sizes maxFee in the same unit", async () => {
@@ -297,7 +301,7 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.BASE),
 				amount: "1000",
 				fromAccountAddress: "GAAA",
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 			});
 			const call = stellar.seen.burn[0];
 			expect(call.amount.raw).toBe(10_000_000_000n);
@@ -312,7 +316,7 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.BASE),
 				amount: "1.2345678",
 				fromAccountAddress: "GAAA",
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 			});
 			expect(stellar.seen.burn[0].amount.raw).toBe(12_345_670n);
 		});
@@ -324,7 +328,7 @@ describe("DefaultRawTxBuilder", () => {
 					destinationToken: tokenFor(NetworkId.BASE),
 					amount: "0.0000009",
 					fromAccountAddress: "GAAA",
-					toAccountAddress: "0xrecipient",
+					toAccountAddress: RECIPIENT_EVM,
 				}),
 			).rejects.toMatchObject({ code: "AMOUNT_TOO_SMALL" });
 			expect(fees.seen).toHaveLength(0);
@@ -337,7 +341,7 @@ describe("DefaultRawTxBuilder", () => {
 				destinationToken: tokenFor(NetworkId.BASE),
 				amount: "5.0",
 				fromAccountAddress: "GAAA",
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 				memo: { type: MemoType.TEXT, value: "test" },
 			});
 			expect(stellar.seen.burn[0].memo).toEqual({
@@ -356,7 +360,7 @@ describe("DefaultRawTxBuilder", () => {
 					destinationToken: token,
 					amount: "1.0",
 					fromAccountAddress: "0xfrom",
-					toAccountAddress: "0xrecipient",
+					toAccountAddress: RECIPIENT_EVM,
 				}),
 			).rejects.toMatchObject({ code: "SAME_NETWORK" });
 		});
@@ -371,7 +375,7 @@ describe("DefaultRawTxBuilder", () => {
 					),
 					amount: "1.0",
 					fromAccountAddress: "0xfrom",
-					toAccountAddress: "0xrecipient",
+					toAccountAddress: RECIPIENT_EVM,
 				}),
 			).rejects.toMatchObject({ code: "MISMATCHED_ENVIRONMENTS" });
 			// no calls should have gone through to connectors
@@ -393,9 +397,104 @@ describe("DefaultRawTxBuilder", () => {
 					destinationToken: tokenFor(NetworkId.BASE),
 					amount: "1.0",
 					fromAccountAddress: "GAAA",
-					toAccountAddress: "0xrecipient",
+					toAccountAddress: RECIPIENT_EVM,
 				}),
 			).rejects.toMatchObject({ code: "UNSUPPORTED_ROUTE" });
+		});
+	});
+
+	describe("send — recipient validation", () => {
+		const cases = [
+			{
+				label: "a short EVM address",
+				destination: NetworkId.BASE,
+				recipient: RECIPIENT_EVM.slice(0, -1),
+				code: "RECIPIENT_INVALID_EVM",
+			},
+			{
+				label: "a long EVM address",
+				destination: NetworkId.BASE,
+				recipient: `${RECIPIENT_EVM}0`,
+				code: "RECIPIENT_INVALID_EVM",
+			},
+			{
+				label: "non-hex characters",
+				destination: NetworkId.BASE,
+				recipient: `${RECIPIENT_EVM.slice(0, -1)}g`,
+				code: "RECIPIENT_INVALID_EVM",
+			},
+			{
+				label: "a bad EIP-55 checksum",
+				destination: NetworkId.BASE,
+				recipient: RECIPIENT_EVM.replace("A83", "a83"),
+				code: "RECIPIENT_INVALID_EVM",
+			},
+			{
+				label: "a Stellar address to an EVM chain",
+				destination: NetworkId.BASE,
+				recipient: RECIPIENT_STELLAR,
+				code: "RECIPIENT_INVALID_EVM",
+			},
+			{
+				label: "an EVM address to Stellar",
+				destination: NetworkId.STELLAR,
+				recipient: RECIPIENT_EVM,
+				code: "RECIPIENT_INVALID_STELLAR",
+			},
+			{
+				label: "a Stellar address with a typo",
+				destination: NetworkId.STELLAR,
+				recipient: RECIPIENT_STELLAR.replace("BBD47", "BBD48"),
+				code: "RECIPIENT_INVALID_STELLAR",
+			},
+			{
+				label: "an empty address",
+				destination: NetworkId.BASE,
+				recipient: "",
+				code: "RECIPIENT_REQUIRED",
+			},
+		];
+
+		for (const { label, destination, recipient, code } of cases) {
+			it(`rejects ${label} before quoting or building`, async () => {
+				const sourceId =
+					destination === NetworkId.STELLAR
+						? NetworkId.BASE
+						: NetworkId.ARBITRUM;
+				await expect(
+					builder.send({
+						sourceToken: tokenFor(sourceId),
+						destinationToken: tokenFor(destination),
+						amount: "1.0",
+						fromAccountAddress: "0xfrom",
+						toAccountAddress: recipient,
+					}),
+				).rejects.toMatchObject({ code });
+				expect(fees.seen).toHaveLength(0);
+				expect(evm.seen.burn).toHaveLength(0);
+			});
+		}
+
+		it("accepts a lowercase EVM address", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.STELLAR),
+				destinationToken: tokenFor(NetworkId.BASE),
+				amount: "1.0",
+				fromAccountAddress: "GAAA",
+				toAccountAddress: RECIPIENT_EVM.toLowerCase(),
+			});
+			expect(stellar.seen.burn).toHaveLength(1);
+		});
+
+		it("accepts a muxed M address for a Stellar destination", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.BASE),
+				destinationToken: tokenFor(NetworkId.STELLAR),
+				amount: "1.0",
+				fromAccountAddress: "0xfrom",
+				toAccountAddress: RECIPIENT_MUXED,
+			});
+			expect(evm.seen.burn).toHaveLength(1);
 		});
 	});
 
@@ -415,11 +514,11 @@ describe("DefaultRawTxBuilder", () => {
 		it("passes the recipient through unchanged", async () => {
 			await builder.receive({
 				destinationToken: tokenFor(NetworkId.ARBITRUM),
-				toAccountAddress: "0xrecipient",
+				toAccountAddress: RECIPIENT_EVM,
 				message: "0xdead",
 				attestation: "0xbeef",
 			});
-			expect(evm.seen.receive[0].to).toBe("0xrecipient");
+			expect(evm.seen.receive[0].to).toBe(RECIPIENT_EVM);
 		});
 	});
 

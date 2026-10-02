@@ -68,7 +68,7 @@ export class EvmChainConnector implements IChainConnector {
 		const mintRecipient =
 			destination.family === ChainFamily.STELLAR
 				? CctpEncoder.stellarAddressToBytes32(recipient)
-				: this.evmAddressToBytes32(recipient as Hex);
+				: CctpEncoder.evmAddressToBytes32(recipient);
 
 		let data: Hex;
 		if (params.hookData) {
@@ -191,10 +191,5 @@ export class EvmChainConnector implements IChainConnector {
 			throw new BridgeError("MISSING_EVM_CHAIN_ID");
 		}
 		return network.evmChainId;
-	}
-
-	private evmAddressToBytes32(address: Hex): Hex {
-		const stripped = address.toLowerCase().replace(/^0x/, "");
-		return `0x${stripped.padStart(64, "0")}` as Hex;
 	}
 }

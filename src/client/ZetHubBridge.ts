@@ -44,6 +44,7 @@ export interface ZetHubBridgeOptions {
 	/** Per-network RPC URL overrides, keyed by network id. Prepended to defaults. */
 	rpc?: NodeRpcUrls;
 	rpcMode?: RpcMode;
+	rpcTimeoutMs?: number;
 	/** Which network set to expose. Defaults to `Environment.MAINNET`. */
 	environment?: Environment;
 	/** Override the Iris attestation endpoints (mainnet + testnet). */
@@ -166,7 +167,7 @@ export class ZetHubBridge {
 
 	constructor(options: ZetHubBridgeOptions = {}) {
 		this.environment = options.environment ?? Environment.MAINNET;
-		this.stellarRpc = new StellarRpc();
+		this.stellarRpc = new StellarRpc({ timeoutMs: options.rpcTimeoutMs });
 		this.trustline = new StellarTrustline(this.stellarRpc);
 		this.attestationService =
 			options.attestation ?? new IrisAttestationService();

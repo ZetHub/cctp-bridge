@@ -8,12 +8,23 @@ import {
 
 export type StellarRpcOp<T> = (server: rpc.Server, url: string) => Promise<T>;
 
+export interface StellarRpcOptions {
+	timeoutMs?: number;
+}
+
+const DEFAULT_RPC_TIMEOUT_MS = 30_000;
+
 /**
  * Runs Soroban RPC calls against a network's configured endpoints, caching one
  * server per URL and failing over to the next endpoint on error.
  */
 export class StellarRpc {
 	private readonly servers = new Map<string, rpc.Server>();
+	private readonly timeoutMs: number;
+
+	constructor(options: StellarRpcOptions = {}) {
+		this.timeoutMs = options.timeoutMs ?? DEFAULT_RPC_TIMEOUT_MS;
+	}
 
 	private serverFor(url: string): rpc.Server {
 		let server = this.servers.get(url);
@@ -28,7 +39,7 @@ export class StellarRpc {
 		let lastErr: unknown;
 		for (const url of network.rpcUrls) {
 			try {
-				return await op(this.serverFor(url), url);
+				return await this.withTimeout(op(this.serverFor(url), url));
 			} catch (err) {
 				if (!this.isTransportError(err)) {
 					throw this.toBridgeError(err);
@@ -39,7 +50,25 @@ export class StellarRpc {
 		throw this.toBridgeError(lastErr);
 	}
 
+	private async withTimeout<T>(pending: Promise<T>): Promise<T> {
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const timeout = new Promise<never>((_, reject) => {
+			timer = setTimeout(
+				() => reject(new BridgeError("RPC_TIMEOUT")),
+				this.timeoutMs,
+			);
+		});
+		try {
+			return await Promise.race([pending, timeout]);
+		} finally {
+			clearTimeout(timer);
+		}
+	}
+
 	private isTransportError(err: unknown): boolean {
+		if (err instanceof BridgeError) {
+			return err.code === "RPC_TIMEOUT";
+		}
 		return httpTransportErrorSchema.safeParse(err).success;
 	}
 

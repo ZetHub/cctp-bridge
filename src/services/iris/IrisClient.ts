@@ -5,15 +5,21 @@ export const IRIS_HOSTS: Record<Environment, string> = {
 	[Environment.TESTNET]: "https://iris-api-sandbox.circle.com",
 };
 
+const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
+
 export interface IrisClientOptions {
 	hosts?: Partial<Record<Environment, string>>;
+	requestTimeoutMs?: number;
 }
 
 export abstract class IrisClient {
 	private readonly hosts: Record<Environment, string>;
+	private readonly requestTimeoutMs: number;
 
 	constructor(options: IrisClientOptions = {}) {
 		this.hosts = { ...IRIS_HOSTS, ...options.hosts };
+		this.requestTimeoutMs =
+			options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
 	}
 
 	host(environment: Environment): string {
@@ -24,6 +30,7 @@ export abstract class IrisClient {
 		return fetch(url, {
 			headers: { Accept: "application/json" },
 			cache: "no-store",
+			signal: AbortSignal.timeout(this.requestTimeoutMs),
 		});
 	}
 

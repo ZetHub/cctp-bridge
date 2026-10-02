@@ -90,6 +90,20 @@ describe("IrisFeeService", () => {
 		).rejects.toMatchObject({ code: "FEE_QUOTE_FAILED", cause: networkError });
 	});
 
+	it("throws FEE_QUOTE_FAILED when Iris does not answer in time", async () => {
+		globalThis.fetch = vi.fn(
+			(_url: string, init?: RequestInit) =>
+				new Promise<Response>((_resolve, reject) => {
+					init?.signal?.addEventListener("abort", () =>
+						reject(init.signal?.reason),
+					);
+				}),
+		) as unknown as typeof fetch;
+		await expect(
+			new IrisFeeService({ requestTimeoutMs: 20 }).getQuote(QUOTE_PARAMS),
+		).rejects.toMatchObject({ code: "FEE_QUOTE_FAILED" });
+	});
+
 	it("throws FEE_QUOTE_FAILED on invalid JSON", async () => {
 		stubFetch("<html>maintenance</html>");
 		await expect(

@@ -188,7 +188,7 @@ export class IrisAttestationService
 		failures: number,
 	): number {
 		if (poll.outcome === PollOutcome.RATE_LIMITED) {
-			return poll.retryAfterMs ?? RATE_LIMIT_BLOCK_MS;
+			return Math.max(poll.retryAfterMs ?? RATE_LIMIT_BLOCK_MS, intervalMs);
 		}
 		if (poll.outcome === PollOutcome.FAILED) {
 			const backoffMs = intervalMs * 2 ** (failures - 1);

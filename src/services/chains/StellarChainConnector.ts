@@ -29,11 +29,12 @@ import type {
 	IChainConnector,
 } from "../../ports/IChainConnector";
 
-const APPROVAL_EXPIRATION_LEDGERS_AHEAD = 100_000;
+/** About 6 days at 5 to 6 seconds per ledger. */
+const DEFAULT_APPROVAL_EXPIRATION_LEDGERS = 100_000;
 const SOROBAN_FEE = "1000000";
 const TX_TIMEOUT_SECONDS = 180;
-/** i128::MAX. Passed to Soroban `approve` when the caller requests an
- *  unlimited allowance (`amount` omitted). */
+/** i128::MAX. Passed to Soroban `approve` when the caller opts into an
+ *  unlimited allowance. */
 const I128_MAX = (1n << 127n) - 1n;
 
 /** Chain connector for the Stellar family. Builds prepared Soroban XDRs
@@ -47,13 +48,14 @@ export class StellarChainConnector implements IChainConnector {
 		const { network, token, owner, amount } = params;
 		this.assertStellar(network);
 		const passphrase = StellarPassphrase.for(network);
+		const expiresInLedgers =
+			params.expiresInLedgers ?? DEFAULT_APPROVAL_EXPIRATION_LEDGERS;
 
 		return this.stellarRpc.run(network, async (server) => {
 			const fetched = await server.getAccount(owner);
 			const acct = new Account(fetched.accountId(), fetched.sequenceNumber());
 			const latest = await server.getLatestLedger();
-			const expirationLedger =
-				latest.sequence + APPROVAL_EXPIRATION_LEDGERS_AHEAD;
+			const expirationLedger = latest.sequence + expiresInLedgers;
 
 			const usdc = new Contract(token.address);
 			const approveAmount = amount

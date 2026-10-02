@@ -42,7 +42,7 @@ if (!(await sdk.bridge.checkAllowance({
   token: sourceToken, owner: myEvmAddress, amount: "1.0",
 }))) {
   const approveTx = await sdk.bridge.rawTxBuilder.approve({
-    token: sourceToken, owner: myEvmAddress,
+    token: sourceToken, owner: myEvmAddress, amount: "1.0",
   });
   await mySignAndBroadcast(approveTx);
 }

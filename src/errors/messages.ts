@@ -5,6 +5,12 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 	AMOUNT_INVALID: "Enter a valid number.",
 	AMOUNT_TOO_SMALL: "Amount must be greater than zero.",
 	AMOUNT_EXCEEDS_BALANCE: "Amount exceeds your USDC balance.",
+	APPROVAL_AMOUNT_REQUIRED:
+		"Pass the amount to approve, or unlimited: true to grant an unlimited allowance.",
+	APPROVAL_AMOUNT_CONFLICT:
+		"Pass either an approval amount or unlimited: true, not both.",
+	APPROVAL_EXPIRATION_INVALID:
+		"expiresInLedgers must be a positive whole number of ledgers.",
 	RECIPIENT_REQUIRED: "Enter a recipient address.",
 	RECIPIENT_INVALID_EVM:
 		"Recipient must be a 0x-prefixed Ethereum-style address (40 hex characters, valid checksum).",

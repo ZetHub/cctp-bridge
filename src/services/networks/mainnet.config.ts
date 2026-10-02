@@ -3,6 +3,7 @@ import { ChainFamily, Environment } from "../../domain/enums";
 import { Network } from "../../domain/Network";
 import { NetworkId } from "../../domain/NetworkId";
 import { usdc } from "./assets";
+import { ATTESTATION_TIMES } from "./attestationTimes";
 
 const EVM = {
 	tokenMessenger: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
@@ -35,6 +36,7 @@ const eth = new Network({
 	],
 	explorerUrl: "https://etherscan.io",
 	accentColor: "#627EEA",
+	attestationTime: ATTESTATION_TIMES.ETHEREUM,
 });
 
 const avalanche = new Network({
@@ -55,6 +57,7 @@ const avalanche = new Network({
 	],
 	explorerUrl: "https://snowtrace.io",
 	accentColor: "#E84142",
+	attestationTime: ATTESTATION_TIMES.AVALANCHE,
 });
 
 const op = new Network({
@@ -75,6 +78,7 @@ const op = new Network({
 	],
 	explorerUrl: "https://optimistic.etherscan.io",
 	accentColor: "#FF0420",
+	attestationTime: ATTESTATION_TIMES.OPTIMISM,
 });
 
 const arbitrum = new Network({
@@ -95,6 +99,7 @@ const arbitrum = new Network({
 	],
 	explorerUrl: "https://arbiscan.io",
 	accentColor: "#28A0F0",
+	attestationTime: ATTESTATION_TIMES.ARBITRUM,
 });
 
 const base = new Network({
@@ -115,6 +120,7 @@ const base = new Network({
 	],
 	explorerUrl: "https://basescan.org",
 	accentColor: "#0052FF",
+	attestationTime: ATTESTATION_TIMES.BASE,
 });
 
 const polygon = new Network({
@@ -135,6 +141,7 @@ const polygon = new Network({
 	],
 	explorerUrl: "https://polygonscan.com",
 	accentColor: "#8247E5",
+	attestationTime: ATTESTATION_TIMES.POLYGON,
 });
 
 const unichain = new Network({
@@ -151,6 +158,7 @@ const unichain = new Network({
 	rpcUrls: ["https://mainnet.unichain.org", "https://unichain.drpc.org"],
 	explorerUrl: "https://uniscan.xyz",
 	accentColor: "#FF007A",
+	attestationTime: ATTESTATION_TIMES.UNICHAIN,
 });
 
 const linea = new Network({
@@ -167,6 +175,7 @@ const linea = new Network({
 	rpcUrls: ["https://rpc.linea.build", "https://linea-rpc.publicnode.com"],
 	explorerUrl: "https://lineascan.build",
 	accentColor: "#121212",
+	attestationTime: ATTESTATION_TIMES.LINEA,
 });
 
 const codex = new Network({
@@ -183,6 +192,7 @@ const codex = new Network({
 	rpcUrls: ["https://rpc.codex.xyz"],
 	explorerUrl: "https://explorer.codex.xyz",
 	accentColor: "#7B61FF",
+	attestationTime: ATTESTATION_TIMES.CODEX,
 });
 
 const sonic = new Network({
@@ -199,6 +209,7 @@ const sonic = new Network({
 	rpcUrls: ["https://rpc.soniclabs.com", "https://sonic.drpc.org"],
 	explorerUrl: "https://sonicscan.org",
 	accentColor: "#FE9A4D",
+	attestationTime: ATTESTATION_TIMES.SONIC,
 });
 
 const world = new Network({
@@ -218,6 +229,7 @@ const world = new Network({
 	],
 	explorerUrl: "https://worldscan.org",
 	accentColor: "#000000",
+	attestationTime: ATTESTATION_TIMES.WORLDCHAIN,
 });
 
 const sei = new Network({
@@ -237,6 +249,7 @@ const sei = new Network({
 	],
 	explorerUrl: "https://seitrace.com",
 	accentColor: "#9E1F19",
+	attestationTime: ATTESTATION_TIMES.SEI,
 });
 
 const hyper = new Network({
@@ -253,6 +266,7 @@ const hyper = new Network({
 	rpcUrls: ["https://rpc.hyperliquid.xyz/evm"],
 	explorerUrl: "https://hyperevmscan.io",
 	accentColor: "#97FCE4",
+	attestationTime: ATTESTATION_TIMES.HYPEREVM,
 });
 
 const stellar = new Network({
@@ -276,6 +290,7 @@ const stellar = new Network({
 	rpcUrls: ["https://mainnet.sorobanrpc.com"],
 	explorerUrl: "https://stellar.expert/explorer/public",
 	accentColor: "#FDDA24",
+	attestationTime: ATTESTATION_TIMES.STELLAR,
 });
 
 export const mainnet: Network[] = [

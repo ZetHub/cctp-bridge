@@ -6,7 +6,7 @@ import {
 	AssetSymbol,
 	ChainFamily,
 	Environment,
-	FinalityThreshold,
+	type FinalityThreshold,
 	RpcMode,
 } from "../domain/enums";
 import type { Network } from "../domain/Network";
@@ -292,7 +292,9 @@ export class ZetHubBridge {
 					sourceDomain: source.cctpDomain,
 					destinationDomain: destination.cctpDomain,
 					minFinalityThreshold:
-						params.minFinalityThreshold ?? FinalityThreshold.FAST,
+						params.minFinalityThreshold ??
+						source.attestationTime.defaultThreshold(),
+					attestationTime: source.attestationTime,
 				});
 			},
 			isMessageReceived: async (

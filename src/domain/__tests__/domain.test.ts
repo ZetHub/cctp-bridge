@@ -7,6 +7,8 @@ import {
 	Environment,
 	Network,
 	TokenAsset,
+	AttestationTime,
+	FinalityThreshold,
 } from "../../index";
 
 describe("Amount", () => {
@@ -256,5 +258,22 @@ describe("Address getters", () => {
 			"GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
 		);
 		expect(s.isStellar).toBe(true);
+	});
+});
+
+describe("AttestationTime", () => {
+	const fast = new AttestationTime({ fastSeconds: 8, standardSeconds: 1140 });
+	const standardOnly = new AttestationTime({ standardSeconds: 5 });
+
+	it("defaults to FAST only where the chain supports it", () => {
+		expect(fast.defaultThreshold()).toBe(FinalityThreshold.FAST);
+		expect(standardOnly.defaultThreshold()).toBe(FinalityThreshold.STANDARD);
+	});
+
+	it("estimates per threshold", () => {
+		expect(fast.secondsFor(FinalityThreshold.FAST)).toBe(8);
+		expect(fast.secondsFor(FinalityThreshold.STANDARD)).toBe(1140);
+		expect(standardOnly.secondsFor(FinalityThreshold.FAST)).toBe(5);
+		expect(standardOnly.secondsFor(FinalityThreshold.STANDARD)).toBe(5);
 	});
 });

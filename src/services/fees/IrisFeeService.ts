@@ -1,5 +1,5 @@
+import { AttestationTime } from "../../domain/AttestationTime";
 import type { BridgeQuote } from "../../domain/BridgeTransaction";
-import { FinalityThreshold } from "../../domain/enums";
 import { BridgeError, IrisRequestError } from "../../errors";
 import type { FeeQuoteParams, IFeeService } from "../../ports/IFeeService";
 import { irisFeeQuotesSchema } from "../../validation/schemas";
@@ -47,11 +47,9 @@ export class IrisFeeService extends IrisClient implements IFeeService {
 		return {
 			feeBps: matched.minimumFee,
 			minFinalityThreshold: matched.finalityThreshold,
-			estimatedSeconds: this.estimateSeconds(params.minFinalityThreshold),
+			estimatedSeconds: (
+				params.attestationTime ?? AttestationTime.GENERIC
+			).secondsFor(params.minFinalityThreshold),
 		};
-	}
-
-	private estimateSeconds(minFinalityThreshold: number): number {
-		return minFinalityThreshold <= FinalityThreshold.FAST ? 30 : 15 * 60;
 	}
 }

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	AttestationTime,
 	Environment,
 	FinalityThreshold,
 	IrisRequestError,
@@ -108,6 +109,28 @@ describe("IrisFeeService", () => {
 		await expect(
 			new IrisFeeService().getQuote(QUOTE_PARAMS),
 		).rejects.toMatchObject({ code: "FEE_QUOTE_FAILED" });
+	});
+
+	it("estimates from the source chain's attestation time", async () => {
+		stubQuotes([
+			{ finalityThreshold: 1000, minimumFee: 1 },
+			{ finalityThreshold: 2000, minimumFee: 0 },
+		]);
+		const attestationTime = new AttestationTime({
+			fastSeconds: 8,
+			standardSeconds: 1140,
+		});
+		const fast = await new IrisFeeService().getQuote({
+			...QUOTE_PARAMS,
+			attestationTime,
+		});
+		const standard = await new IrisFeeService().getQuote({
+			...QUOTE_PARAMS,
+			minFinalityThreshold: FinalityThreshold.STANDARD,
+			attestationTime,
+		});
+		expect(fast.estimatedSeconds).toBe(8);
+		expect(standard.estimatedSeconds).toBe(1140);
 	});
 
 	it("estimated seconds is faster for FAST than STANDARD", async () => {

@@ -1,3 +1,4 @@
+import { AttestationTime } from "./AttestationTime";
 import type { AssetSymbol, Environment } from "./enums";
 import { ChainFamily } from "./enums";
 import type { TokenAsset } from "./TokenAsset";
@@ -19,6 +20,7 @@ export interface NetworkProps {
 	readonly rpcUrls: readonly string[];
 	readonly explorerUrl: string;
 	readonly accentColor: string;
+	readonly attestationTime?: AttestationTime;
 }
 
 export class Network implements NetworkProps {
@@ -38,6 +40,7 @@ export class Network implements NetworkProps {
 	readonly rpcUrls: readonly string[];
 	readonly explorerUrl: string;
 	readonly accentColor: string;
+	readonly attestationTime: AttestationTime;
 
 	constructor(props: NetworkProps) {
 		if (!props.rpcUrls.length) {
@@ -62,6 +65,7 @@ export class Network implements NetworkProps {
 		this.rpcUrls = props.rpcUrls;
 		this.explorerUrl = props.explorerUrl;
 		this.accentColor = props.accentColor;
+		this.attestationTime = props.attestationTime ?? AttestationTime.GENERIC;
 	}
 
 	get rpcUrl(): string {

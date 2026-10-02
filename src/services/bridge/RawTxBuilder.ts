@@ -39,19 +39,14 @@ export interface TokenWithChainDetails {
 interface ApproveTxBaseParams {
 	token: TokenWithChainDetails;
 	owner: string;
-	/** Stellar only: ledgers until the allowance expires. Defaults to 100_000
-	 *  (about 6 days). EVM allowances do not expire. */
 	expiresInLedgers?: number;
 }
 
-/** Approves exactly `amount`. Pass 0 to revoke an allowance. */
 export interface ApproveExactTxParams extends ApproveTxBaseParams {
 	amount: Amount | string | number;
 	unlimited?: false;
 }
 
-/** Lets the TokenMessenger move the owner's whole balance until the
- *  allowance expires (Stellar) or is revoked (EVM). */
 export interface ApproveUnlimitedTxParams extends ApproveTxBaseParams {
 	amount?: undefined;
 	unlimited: true;
@@ -184,7 +179,6 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 		});
 	}
 
-	/** `undefined` means unlimited, and only on explicit opt-in. */
 	private approvalAmount(params: ApproveTxParams): Amount | undefined {
 		if (params.unlimited === true) {
 			if (params.amount !== undefined) {
@@ -259,9 +253,6 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 		return Amount.fromHuman(String(amount), token.network.family);
 	}
 
-	/** The amount in source-token subunits, cut to the precision a CCTP message
-	 *  carries. On Stellar this drops the 7th decimal, which the
-	 *  TokenMessenger would leave in the sender's account anyway. */
 	private toBurnAmount(amount: Amount, token: TokenAsset): Amount {
 		const burnAmount = amount
 			.scaleTo(CCTP_AMOUNT_DECIMALS)

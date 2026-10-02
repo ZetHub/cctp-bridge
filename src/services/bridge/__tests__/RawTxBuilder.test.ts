@@ -72,6 +72,9 @@ class FakeConnector implements IChainConnector {
 	async getNativeBalance(_p: GetNativeBalanceOnChainParams) {
 		return Amount.fromRawWithDecimals(0n, 18);
 	}
+	async isMessageReceived() {
+		return false;
+	}
 }
 
 class FakeFeeService implements IFeeService {
@@ -344,6 +347,32 @@ describe("DefaultRawTxBuilder", () => {
 			expect(evm.seen.burn).toHaveLength(0);
 		});
 
+		it("passes a destinationCaller through to the connector", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.BASE),
+				destinationToken: tokenFor(NetworkId.ARBITRUM),
+				amount: "1",
+				destinationCaller: RECIPIENT_EVM,
+				fromAccountAddress: "0xfrom",
+				toAccountAddress: RECIPIENT_EVM,
+			});
+			expect(evm.seen.burn[0].destinationCaller).toBe(RECIPIENT_EVM);
+		});
+
+		it("throws DESTINATION_CALLER_INVALID for a bad caller address", async () => {
+			await expect(
+				builder.send({
+					sourceToken: tokenFor(NetworkId.BASE),
+					destinationToken: tokenFor(NetworkId.ARBITRUM),
+					amount: "1",
+					destinationCaller: "0x1234",
+					fromAccountAddress: "0xfrom",
+					toAccountAddress: RECIPIENT_EVM,
+				}),
+			).rejects.toMatchObject({ code: "DESTINATION_CALLER_INVALID" });
+			expect(fees.seen).toHaveLength(0);
+		});
+
 		it("defaults min finality to FAST", async () => {
 			await builder.send({
 				sourceToken: tokenFor(NetworkId.BASE),
@@ -372,6 +401,20 @@ describe("DefaultRawTxBuilder", () => {
 			expect(call.recipient).toBe(
 				tokenFor(NetworkId.STELLAR).network.cctpForwarder,
 			);
+		});
+
+		it("throws DESTINATION_CALLER_UNSUPPORTED for a Stellar destination", async () => {
+			await expect(
+				builder.send({
+					sourceToken: tokenFor(NetworkId.BASE),
+					destinationToken: tokenFor(NetworkId.STELLAR),
+					amount: "1",
+					destinationCaller: RECIPIENT_EVM,
+					fromAccountAddress: "0xfrom",
+					toAccountAddress: RECIPIENT_STELLAR,
+				}),
+			).rejects.toMatchObject({ code: "DESTINATION_CALLER_UNSUPPORTED" });
+			expect(evm.seen.burn).toHaveLength(0);
 		});
 
 		it("throws MISSING_FORWARDER if destination is missing forwarder config", async () => {

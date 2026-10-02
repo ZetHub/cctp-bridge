@@ -62,6 +62,7 @@ export interface SendTxParams {
 	toAccountAddress: string;
 	minFinalityThreshold?: FinalityThreshold;
 	maxFee?: Amount | string | number;
+	destinationCaller?: string;
 	memo?: BridgeMemo;
 }
 
@@ -135,6 +136,7 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 		}
 
 		this.assertRecipient(destination, toAccountAddress);
+		this.assertDestinationCaller(destination, params.destinationCaller);
 		const token = this.toTokenAsset(sourceToken);
 		const burnAmount = this.toBurnAmount(
 			this.parseAmount(amount, sourceToken),
@@ -164,6 +166,7 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			recipient: this.recipientFor(source, destination, toAccountAddress),
 			maxFee,
 			minFinalityThreshold,
+			destinationCaller: params.destinationCaller,
 			hookData,
 			memo,
 		});
@@ -256,6 +259,21 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 		}
 		if (!Address.validate(recipient, destination.family).valid) {
 			throw new BridgeError(INVALID_RECIPIENT_CODE[destination.family]);
+		}
+	}
+
+	private assertDestinationCaller(
+		destination: Network,
+		destinationCaller: string | undefined,
+	): void {
+		if (destinationCaller === undefined) {
+			return;
+		}
+		if (destination.family === ChainFamily.STELLAR) {
+			throw new BridgeError("DESTINATION_CALLER_UNSUPPORTED");
+		}
+		if (!Address.isEvm(destinationCaller)) {
+			throw new BridgeError("DESTINATION_CALLER_INVALID");
 		}
 	}
 

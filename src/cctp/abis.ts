@@ -98,6 +98,13 @@ export const MESSAGE_TRANSMITTER_V2_ABI = [
 		outputs: [{ type: "bool" }],
 	},
 	{
+		type: "function",
+		name: "usedNonces",
+		stateMutability: "view",
+		inputs: [{ name: "nonce", type: "bytes32" }],
+		outputs: [{ type: "uint256" }],
+	},
+	{
 		type: "event",
 		name: "MessageSent",
 		inputs: [{ name: "message", type: "bytes", indexed: false }],

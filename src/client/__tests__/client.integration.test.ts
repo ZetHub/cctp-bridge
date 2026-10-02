@@ -21,6 +21,7 @@ import {
 	type IAttestationService,
 	type IChainConnector,
 	type IFeeService,
+	type IsMessageReceivedOnChainParams,
 	type WaitForAttestationParams,
 	RpcMode,
 } from "../../index";
@@ -33,8 +34,10 @@ class RecordingConnector implements IChainConnector {
 	readonly seenAllowance: GetAllowanceOnChainParams[] = [];
 	readonly seenTokenBalance: GetTokenBalanceOnChainParams[] = [];
 	readonly seenNativeBalance: GetNativeBalanceOnChainParams[] = [];
+	readonly seenNonces: IsMessageReceivedOnChainParams[] = [];
 	tokenBalance = 1_000_000n;
 	allowance = 500_000n;
+	messageReceived = false;
 
 	constructor(family: ChainFamily) {
 		this.family = family;
@@ -71,6 +74,10 @@ class RecordingConnector implements IChainConnector {
 	async getNativeBalance(p: GetNativeBalanceOnChainParams) {
 		this.seenNativeBalance.push(p);
 		return Amount.fromRawWithDecimals(2_500_000_000_000_000_000n, 18);
+	}
+	async isMessageReceived(p: IsMessageReceivedOnChainParams) {
+		this.seenNonces.push(p);
+		return this.messageReceived;
 	}
 }
 
@@ -225,6 +232,40 @@ describe("ZetHubBridge — bridge API", () => {
 				address: "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
 			}),
 		).toBe(true);
+	});
+});
+
+describe("ZetHubBridge — isMessageReceived", () => {
+	const nonce = `0x${"59".repeat(32)}`;
+
+	it("asks the destination chain's connector about the nonce", async () => {
+		const { sdk, evm, stellar } = make();
+		const chains = await sdk.chainDetailsMap();
+		const destinationToken = chains[NetworkId.STELLAR].tokens[0];
+		stellar.messageReceived = true;
+		expect(
+			await sdk.bridge.isMessageReceived({
+				destinationToken,
+				eventNonce: nonce,
+			}),
+		).toBe(true);
+		expect(stellar.seenNonces[0]).toMatchObject({
+			network: destinationToken.network,
+			nonce,
+		});
+		expect(evm.seenNonces).toHaveLength(0);
+	});
+
+	it("throws NONCE_INVALID for a nonce that is not bytes32", async () => {
+		const { sdk, evm } = make();
+		const chains = await sdk.chainDetailsMap();
+		await expect(
+			sdk.bridge.isMessageReceived({
+				destinationToken: chains[NetworkId.BASE].tokens[0],
+				eventNonce: "42",
+			}),
+		).rejects.toMatchObject({ code: "NONCE_INVALID" });
+		expect(evm.seenNonces).toHaveLength(0);
 	});
 });
 

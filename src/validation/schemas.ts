@@ -53,3 +53,5 @@ export const jsonRpcErrorSchema = z.object({
 	code: z.number(),
 	message: z.string(),
 });
+
+export const bytes32Schema = z.string().regex(/^0x[0-9a-fA-F]{64}$/);

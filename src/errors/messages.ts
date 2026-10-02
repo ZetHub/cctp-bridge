@@ -22,6 +22,12 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 	MEMO_INVALID_HASH: "Memo hash/return must be 32 bytes (64 hex characters).",
 	TX_HASH_INVALID:
 		"Transaction hash must be 64 hex characters, with or without a 0x prefix.",
+	NONCE_INVALID:
+		"Event nonce must be a 0x-prefixed bytes32 (64 hex characters), as Iris returns it.",
+	DESTINATION_CALLER_INVALID:
+		"destinationCaller must be a 0x-prefixed EVM address on the destination chain.",
+	DESTINATION_CALLER_UNSUPPORTED:
+		"Transfers to Stellar must use the CctpForwarder as destination caller; a custom destinationCaller is not supported.",
 	MISSING_SOURCE: "Pick a source chain.",
 	MISSING_DESTINATION: "Pick a destination chain.",
 	MISSING_EVM_CHAIN_ID: "Network is missing its EVM chain id.",

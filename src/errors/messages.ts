@@ -3,6 +3,7 @@ import type { ErrorCode } from "./codes";
 export const ErrorMessage: Record<ErrorCode, string> = {
 	AMOUNT_REQUIRED: "Enter an amount.",
 	AMOUNT_INVALID: "Enter a valid number.",
+	AMOUNT_NEGATIVE: "Amount must not be negative.",
 	AMOUNT_TOO_SMALL: "Amount must be greater than zero.",
 	AMOUNT_EXCEEDS_BALANCE: "Amount exceeds your USDC balance.",
 	APPROVAL_AMOUNT_REQUIRED:
@@ -10,7 +11,7 @@ export const ErrorMessage: Record<ErrorCode, string> = {
 	APPROVAL_AMOUNT_CONFLICT:
 		"Pass either an approval amount or unlimited: true, not both.",
 	APPROVAL_EXPIRATION_INVALID:
-		"expiresInLedgers must be a positive whole number of ledgers.",
+		"expiresInLedgers must be a whole number of ledgers from 1 to 3,110,399 (one less than Stellar's maximum entry lifetime).",
 	MAX_FEE_INVALID: "maxFee must be zero or more, and less than the amount.",
 	SOROBAN_FEE_INVALID:
 		"sorobanInclusionFee must be a positive whole number of stroops.",

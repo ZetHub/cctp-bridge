@@ -222,7 +222,28 @@ describe("DefaultRawTxBuilder", () => {
 			expect(stellar.seen.approve[0].expiresInLedgers).toBe(720);
 		});
 
-		for (const expiresInLedgers of [0, -1, 1.5, Number.NaN]) {
+		it("accepts expiresInLedgers up to 3,110,399", async () => {
+			await builder.approve({
+				token: tokenFor(NetworkId.STELLAR),
+				owner: "GAAA",
+				amount: "1",
+				expiresInLedgers: 3_110_399,
+			});
+			expect(stellar.seen.approve[0].expiresInLedgers).toBe(3_110_399);
+		});
+
+		it("throws AMOUNT_NEGATIVE for a negative approval amount", async () => {
+			await expect(
+				builder.approve({
+					token: tokenFor(NetworkId.BASE),
+					owner: "0xowner",
+					amount: Amount.fromRaw(-1n, ChainFamily.EVM),
+				}),
+			).rejects.toMatchObject({ code: "AMOUNT_NEGATIVE" });
+			expect(evm.seen.approve).toHaveLength(0);
+		});
+
+		for (const expiresInLedgers of [0, -1, 1.5, Number.NaN, 3_110_400]) {
 			it(`throws APPROVAL_EXPIRATION_INVALID for ${expiresInLedgers}`, async () => {
 				await expect(
 					builder.approve({

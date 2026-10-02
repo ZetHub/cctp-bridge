@@ -17,7 +17,10 @@ import { BridgeError, type ErrorCode } from "../../errors";
 import type { IChainConnector } from "../../ports/IChainConnector";
 import type { IFeeService } from "../../ports/IFeeService";
 import type { INetworkService } from "../../ports/INetworkService";
-import { ledgerCountSchema, stroopsSchema } from "../../validation/schemas";
+import {
+	approvalExpirationSchema,
+	stroopsSchema,
+} from "../../validation/schemas";
 
 const INVALID_RECIPIENT_CODE: Record<ChainFamily, ErrorCode> = {
 	[ChainFamily.EVM]: "RECIPIENT_INVALID_EVM",
@@ -100,7 +103,7 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 		const amount = this.approvalAmount(params);
 		if (
 			expiresInLedgers !== undefined &&
-			!ledgerCountSchema.safeParse(expiresInLedgers).success
+			!approvalExpirationSchema.safeParse(expiresInLedgers).success
 		) {
 			throw new BridgeError("APPROVAL_EXPIRATION_INVALID");
 		}
@@ -213,7 +216,11 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 		if (params.amount === undefined) {
 			throw new BridgeError("APPROVAL_AMOUNT_REQUIRED");
 		}
-		return this.parseAmount(params.amount, params.token);
+		const amount = this.parseAmount(params.amount, params.token);
+		if (amount.raw < 0n) {
+			throw new BridgeError("AMOUNT_NEGATIVE");
+		}
+		return amount;
 	}
 
 	private connectorFor(network: Network): IChainConnector {

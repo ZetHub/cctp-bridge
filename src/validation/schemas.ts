@@ -34,7 +34,15 @@ export const humanAmountSchema = z
 	.string()
 	.regex(/^\d*(\.\d*)?$/, ValidationMessage.INVALID_AMOUNT);
 
-export const ledgerCountSchema = z.number().int().positive();
+export const STELLAR_MAX_ENTRY_TTL_LEDGERS = 3_110_400;
+export const MAX_APPROVAL_EXPIRATION_LEDGERS =
+	STELLAR_MAX_ENTRY_TTL_LEDGERS - 1;
+
+export const approvalExpirationSchema = z
+	.number()
+	.int()
+	.positive()
+	.max(MAX_APPROVAL_EXPIRATION_LEDGERS);
 
 export const txHashSchema = z.string().regex(/^(0x)?[0-9a-fA-F]{64}$/);
 

@@ -37,3 +37,10 @@ export const humanAmountSchema = z
 export const ledgerCountSchema = z.number().int().positive();
 
 export const txHashSchema = z.string().regex(/^(0x)?[0-9a-fA-F]{64}$/);
+
+export const irisFeeQuotesSchema = z.array(
+	z.object({
+		finalityThreshold: z.number().int(),
+		minimumFee: z.number().nonnegative(),
+	}),
+);

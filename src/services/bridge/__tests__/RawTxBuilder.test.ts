@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	Amount,
 	AssetSymbol,
+	BridgeError,
 	ChainFamily,
 	Environment,
 	FinalityThreshold,
@@ -287,6 +288,62 @@ describe("DefaultRawTxBuilder", () => {
 			expect(fees.seen).toHaveLength(0);
 		});
 
+		it("uses an explicit maxFee and skips the fee quote", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.BASE),
+				destinationToken: tokenFor(NetworkId.ARBITRUM),
+				amount: "1000",
+				maxFee: "0.25",
+				fromAccountAddress: "0xfrom",
+				toAccountAddress: RECIPIENT_EVM,
+			});
+			expect(fees.seen).toHaveLength(0);
+			expect(evm.seen.burn[0].maxFee).toBe(250_000n);
+		});
+
+		it("throws MAX_FEE_INVALID when maxFee is not below the amount", async () => {
+			await expect(
+				builder.send({
+					sourceToken: tokenFor(NetworkId.BASE),
+					destinationToken: tokenFor(NetworkId.ARBITRUM),
+					amount: "1",
+					maxFee: "1",
+					fromAccountAddress: "0xfrom",
+					toAccountAddress: RECIPIENT_EVM,
+				}),
+			).rejects.toMatchObject({ code: "MAX_FEE_INVALID" });
+			expect(evm.seen.burn).toHaveLength(0);
+		});
+
+		it("throws MAX_FEE_INVALID for a negative maxFee", async () => {
+			await expect(
+				builder.send({
+					sourceToken: tokenFor(NetworkId.BASE),
+					destinationToken: tokenFor(NetworkId.ARBITRUM),
+					amount: "1",
+					maxFee: Amount.fromRaw(-1n, ChainFamily.EVM),
+					fromAccountAddress: "0xfrom",
+					toAccountAddress: RECIPIENT_EVM,
+				}),
+			).rejects.toMatchObject({ code: "MAX_FEE_INVALID" });
+		});
+
+		it("propagates a fee quote failure instead of burning with maxFee 0", async () => {
+			fees.getQuote = async () => {
+				throw new BridgeError("FEE_QUOTE_FAILED");
+			};
+			await expect(
+				builder.send({
+					sourceToken: tokenFor(NetworkId.BASE),
+					destinationToken: tokenFor(NetworkId.ARBITRUM),
+					amount: "1",
+					fromAccountAddress: "0xfrom",
+					toAccountAddress: RECIPIENT_EVM,
+				}),
+			).rejects.toMatchObject({ code: "FEE_QUOTE_FAILED" });
+			expect(evm.seen.burn).toHaveLength(0);
+		});
+
 		it("defaults min finality to FAST", async () => {
 			await builder.send({
 				sourceToken: tokenFor(NetworkId.BASE),
@@ -366,6 +423,18 @@ describe("DefaultRawTxBuilder", () => {
 			expect(call.amount.raw).toBe(10_000_000_000n);
 			expect(call.amount.decimals).toBe(7);
 			expect(call.maxFee).toBe(1_560_000n);
+		});
+
+		it("scales an explicit maxFee to 7-decimal subunits", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.STELLAR),
+				destinationToken: tokenFor(NetworkId.BASE),
+				amount: "1000",
+				maxFee: "0.25",
+				fromAccountAddress: "GAAA",
+				toAccountAddress: RECIPIENT_EVM,
+			});
+			expect(stellar.seen.burn[0].maxFee).toBe(2_500_000n);
 		});
 
 		it("drops the 7th decimal that a CCTP message cannot carry", async () => {

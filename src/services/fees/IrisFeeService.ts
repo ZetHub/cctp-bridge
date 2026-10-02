@@ -1,56 +1,54 @@
 import type { BridgeQuote } from "../../domain/BridgeTransaction";
-import { Environment, FinalityThreshold } from "../../domain/enums";
+import { FinalityThreshold } from "../../domain/enums";
+import { BridgeError, IrisRequestError } from "../../errors";
 import type { FeeQuoteParams, IFeeService } from "../../ports/IFeeService";
+import { irisFeeQuotesSchema } from "../../validation/schemas";
+import { IrisClient, type IrisClientOptions } from "../iris/IrisClient";
 
-const DEFAULT_HOSTS: Record<Environment, string> = {
-	[Environment.MAINNET]: "https://iris-api.circle.com",
-	[Environment.TESTNET]: "https://iris-api-sandbox.circle.com",
-};
+export interface IrisFeeOptions extends IrisClientOptions {}
 
-interface IrisFeesResponseEntry {
-	minimumFee?: number;
-	finalityThreshold?: number;
-}
-
-export interface IrisFeeOptions {
-	hosts?: Partial<Record<Environment, string>>;
-}
-
-export class IrisFeeService implements IFeeService {
-	private readonly hosts: Record<Environment, string>;
-
+export class IrisFeeService extends IrisClient implements IFeeService {
 	constructor(options: IrisFeeOptions = {}) {
-		this.hosts = { ...DEFAULT_HOSTS, ...options.hosts };
+		super(options);
 	}
 
 	async getQuote(params: FeeQuoteParams): Promise<BridgeQuote> {
-		const url = `${this.hosts[params.environment]}/v2/burn/USDC/fees/${params.sourceDomain}/${params.destinationDomain}`;
+		const url = `${this.host(params.environment)}/v2/burn/USDC/fees/${params.sourceDomain}/${params.destinationDomain}`;
+		let res: Response;
 		try {
-			const res = await fetch(url, {
-				headers: { Accept: "application/json" },
-				cache: "no-store",
-			});
-			if (!res.ok) {
-				throw new Error(`Iris fees ${res.status}`);
-			}
-			const body = (await res.json()) as IrisFeesResponseEntry[];
-			const matched =
-				body.find((d) => d.finalityThreshold === params.minFinalityThreshold) ??
-				body[0];
-			const feeBps = Number(matched?.minimumFee ?? 0);
-			return {
-				feeBps: Number.isFinite(feeBps) ? feeBps : 0,
-				minFinalityThreshold:
-					matched?.finalityThreshold ?? params.minFinalityThreshold,
-				estimatedSeconds: this.estimateSeconds(params.minFinalityThreshold),
-			};
-		} catch {
-			return {
-				feeBps: 0,
-				minFinalityThreshold: params.minFinalityThreshold,
-				estimatedSeconds: this.estimateSeconds(params.minFinalityThreshold),
-			};
+			res = await this.request(url);
+		} catch (err) {
+			throw new BridgeError("FEE_QUOTE_FAILED", undefined, this.toError(err));
 		}
+		if (!res.ok) {
+			throw new IrisRequestError(
+				"FEE_QUOTE_FAILED",
+				res.status,
+				await this.readBody(res),
+			);
+		}
+
+		let body: unknown;
+		try {
+			body = await res.json();
+		} catch (err) {
+			throw new BridgeError("FEE_QUOTE_FAILED", undefined, this.toError(err));
+		}
+		const quotes = irisFeeQuotesSchema.safeParse(body);
+		if (!quotes.success) {
+			throw new BridgeError("FEE_QUOTE_FAILED", undefined, quotes.error);
+		}
+		const matched = quotes.data.find(
+			(quote) => quote.finalityThreshold === params.minFinalityThreshold,
+		);
+		if (!matched) {
+			throw new BridgeError("FEE_TIER_UNAVAILABLE");
+		}
+		return {
+			feeBps: matched.minimumFee,
+			minFinalityThreshold: matched.finalityThreshold,
+			estimatedSeconds: this.estimateSeconds(params.minFinalityThreshold),
+		};
 	}
 
 	private estimateSeconds(minFinalityThreshold: number): number {

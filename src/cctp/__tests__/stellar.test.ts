@@ -1,5 +1,6 @@
 import { Networks } from "@stellar/stellar-sdk";
 import { describe, expect, it } from "vitest";
+import { xdrField } from "../../__tests__/xdr";
 import {
 	AssetSymbol,
 	ChainFamily,
@@ -70,7 +71,7 @@ describe("StellarCodec memos", () => {
 	it("splits u128 into hi/lo parts", () => {
 		const big = (1n << 64n) + 5n;
 		const parts = StellarCodec.i128(big);
-		expect(parts.hi().toString()).toBe("1");
-		expect(parts.lo().toString()).toBe("5");
+		expect(String(xdrField(parts, "hi"))).toBe("1");
+		expect(String(xdrField(parts, "lo"))).toBe("5");
 	});
 });

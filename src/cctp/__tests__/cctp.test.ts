@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { xdrField } from "../../__tests__/xdr";
 import {
 	CctpEncoder,
 	CctpEventReader,
@@ -84,7 +85,7 @@ describe("StellarCodec", () => {
 
 	it("builds i128 parts", () => {
 		const parts = StellarCodec.i128(123n);
-		expect(parts.lo().toString()).toBe("123");
+		expect(String(xdrField(parts, "lo"))).toBe("123");
 	});
 
 	it("encodes memos of every type", () => {

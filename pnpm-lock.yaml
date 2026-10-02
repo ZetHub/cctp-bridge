@@ -4,19 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  viem: 2.37.6
-
 importers:
 
   .:
     dependencies:
-      '@stellar/stellar-sdk':
-        specifier: ^14.6.1
-        version: 14.6.1
-      viem:
-        specifier: 2.37.6
-        version: 2.37.6(typescript@5.9.3)(zod@4.4.3)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -39,6 +30,9 @@ importers:
       '@semantic-release/release-notes-generator':
         specifier: ^14.1.1
         version: 14.1.1(semantic-release@25.0.7(typescript@5.9.3))
+      '@stellar/stellar-sdk':
+        specifier: ^14.6.1
+        version: 14.6.1
       '@types/node':
         specifier: ^22.9.0
         version: 22.20.1
@@ -57,6 +51,9 @@ importers:
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
+      viem:
+        specifier: 2.37.6
+        version: 2.37.6(typescript@5.9.3)(zod@4.4.3)
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.1)

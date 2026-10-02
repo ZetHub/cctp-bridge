@@ -43,3 +43,43 @@ jobs:
           name: coverage
           path: coverage
           if-no-files-found: ignore
+
+  peer-range:
+    name: Peers (viem ${{ matrix.viem }}, stellar-sdk ${{ matrix.stellar }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { viem: "2.37.0", stellar: "14.0.0" }
+          - { viem: "2.37.0", stellar: "15.0.0" }
+          - { viem: "2.37.0", stellar: "16.0.0" }
+          - { viem: "2.37.0", stellar: "17.0.1" }
+          - { viem: "^2", stellar: "^14" }
+          - { viem: "^2", stellar: "^15" }
+          - { viem: "^2", stellar: "^16" }
+          - { viem: "^2", stellar: "^17" }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install the peer versions under test
+        run: pnpm add -D "viem@${{ matrix.viem }}" "@stellar/stellar-sdk@${{ matrix.stellar }}"
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

@@ -97,13 +97,14 @@ new ZetHubBridge({
     [NetworkId.BASE]: ["https://your-base-node.example"],
   },
   rpcMode: RpcMode.PREPEND,
+  rpcTimeoutMs: 30_000,
   attestation: undefined,             // override the Iris client
   fees: undefined,                    // override the Iris fee client
   connectors: undefined,              // add / replace chain family connectors
 });
 ```
 
-With `RpcMode.PREPEND` (the default), your `rpc` URLs are tried before the built-in endpoints. With `RpcMode.REPLACE`, only your URLs are used, so no request reaches a public endpoint. The built-in endpoints are public RPCs run by third parties, with rate limits; `sdk.chainDetailsMap()` lists them per network. The SDK moves to the next endpoint only when one is unreachable or answers with an HTTP error, never on a contract, simulation or JSON-RPC error.
+With `RpcMode.PREPEND` (the default), your `rpc` URLs are tried before the built-in endpoints. With `RpcMode.REPLACE`, only your URLs are used, so no request reaches a public endpoint. The built-in endpoints are public RPCs run by third parties, with rate limits; `sdk.chainDetailsMap()` lists them per network. The SDK moves to the next endpoint only when one is unreachable, answers with an HTTP error, or does not answer within `rpcTimeoutMs` (30 seconds by default). It never moves on after a contract, simulation or JSON-RPC error.
 
 Everything is optional — `new ZetHubBridge()` works. Full details on the [Configuration page](https://bridge-docs.zethub.cloud/docs/getting-started/configuration).
 

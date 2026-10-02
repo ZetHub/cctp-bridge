@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Environment, NetworkService, StellarRpc } from "../../index";
 
 const networks = new NetworkService();
@@ -62,6 +62,43 @@ describe("StellarRpc", () => {
 			expect(seen).toEqual(stellar.rpcUrls);
 		});
 	}
+
+	it("fails over when an endpoint does not answer before the timeout", async () => {
+		const rpc = new StellarRpc({ timeoutMs: 20 });
+		stubServers(rpc);
+		const seen: string[] = [];
+		const result = await rpc.run(stellar, async (server, url) => {
+			seen.push(url);
+			if (seen.length === 1) {
+				return new Promise<string>(() => {});
+			}
+			return (server as { url: string }).url;
+		});
+		expect(result).toBe(stellar.rpcUrls[1]);
+		expect(seen).toEqual(stellar.rpcUrls);
+	});
+
+	it("throws RPC_TIMEOUT when every endpoint hangs", async () => {
+		const rpc = new StellarRpc({ timeoutMs: 20 });
+		stubServers(rpc);
+		const seen: string[] = [];
+		await expect(
+			rpc.run(stellar, async (_server, url) => {
+				seen.push(url);
+				return new Promise<string>(() => {});
+			}),
+		).rejects.toMatchObject({ code: "RPC_TIMEOUT" });
+		expect(seen).toEqual(stellar.rpcUrls);
+	});
+
+	it("clears the timer when the endpoint answers in time", async () => {
+		const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+		const rpc = new StellarRpc({ timeoutMs: 60_000 });
+		stubServers(rpc);
+		await rpc.run(stellar, async () => "ok");
+		expect(clearSpy).toHaveBeenCalled();
+		clearSpy.mockRestore();
+	});
 
 	it("throws a simulation error from the first endpoint without failing over", async () => {
 		const rpc = new StellarRpc();

@@ -6,7 +6,7 @@ import type { BridgeMemo } from "../../domain/BridgeMemo";
 import {
 	type AssetSymbol,
 	ChainFamily,
-	FinalityThreshold,
+	type FinalityThreshold,
 } from "../../domain/enums";
 import type { Network } from "../../domain/Network";
 import type { NetworkIdInput } from "../../domain/NetworkId";
@@ -143,7 +143,7 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			token,
 		);
 		const minFinalityThreshold =
-			params.minFinalityThreshold ?? FinalityThreshold.FAST;
+			params.minFinalityThreshold ?? source.attestationTime.defaultThreshold();
 
 		const maxFee =
 			params.maxFee === undefined
@@ -220,6 +220,7 @@ export class DefaultRawTxBuilder implements RawTxBuilder {
 			sourceDomain: source.cctpDomain,
 			destinationDomain: destination.cctpDomain,
 			minFinalityThreshold,
+			attestationTime: source.attestationTime,
 		});
 		return FeeMath.maxFeeWithBuffer(burnAmount.raw, quote.feeBps);
 	}

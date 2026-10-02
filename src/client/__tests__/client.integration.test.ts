@@ -235,6 +235,25 @@ describe("ZetHubBridge — bridge API", () => {
 	});
 });
 
+describe("ZetHubBridge — quote finality", () => {
+	it("quotes FAST from Base and STANDARD from Stellar by default", async () => {
+		const { sdk, fees } = make();
+		const chains = await sdk.chainDetailsMap();
+		const base = chains[NetworkId.BASE].tokens[0];
+		const stellar = chains[NetworkId.STELLAR].tokens[0];
+		await sdk.bridge.quote({ sourceToken: base, destinationToken: stellar });
+		await sdk.bridge.quote({ sourceToken: stellar, destinationToken: base });
+		expect(fees.seen[0]).toMatchObject({
+			minFinalityThreshold: FinalityThreshold.FAST,
+			attestationTime: base.network.attestationTime,
+		});
+		expect(fees.seen[1]).toMatchObject({
+			minFinalityThreshold: FinalityThreshold.STANDARD,
+			attestationTime: stellar.network.attestationTime,
+		});
+	});
+});
+
 describe("ZetHubBridge — isMessageReceived", () => {
 	const nonce = `0x${"59".repeat(32)}`;
 

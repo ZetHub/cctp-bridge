@@ -505,6 +505,23 @@ describe("DefaultRawTxBuilder", () => {
 			expect(stellar.seen.burn).toHaveLength(0);
 		});
 
+		it("defaults to STANDARD, since Stellar has no Fast Transfer", async () => {
+			await builder.send({
+				sourceToken: tokenFor(NetworkId.STELLAR),
+				destinationToken: tokenFor(NetworkId.BASE),
+				amount: "1",
+				fromAccountAddress: "GAAA",
+				toAccountAddress: RECIPIENT_EVM,
+			});
+			expect(stellar.seen.burn[0].minFinalityThreshold).toBe(
+				FinalityThreshold.STANDARD,
+			);
+			expect(fees.seen[0]).toMatchObject({
+				minFinalityThreshold: FinalityThreshold.STANDARD,
+				attestationTime: tokenFor(NetworkId.STELLAR).network.attestationTime,
+			});
+		});
+
 		it("propagates the memo through to the Stellar connector", async () => {
 			await builder.send({
 				sourceToken: tokenFor(NetworkId.STELLAR),

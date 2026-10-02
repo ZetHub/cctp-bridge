@@ -1,5 +1,6 @@
 export * from "./Address";
 export * from "./Amount";
+export * from "./AttestationTime";
 export * from "./BridgeMemo";
 export * from "./BridgeTransaction";
 export * from "./enums";

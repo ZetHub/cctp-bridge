@@ -3,6 +3,7 @@ import { ChainFamily, Environment } from "../../domain/enums";
 import { Network } from "../../domain/Network";
 import { NetworkId } from "../../domain/NetworkId";
 import { usdc } from "./assets";
+import { ATTESTATION_TIMES } from "./attestationTimes";
 
 const EVM = {
 	tokenMessenger: "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
@@ -34,6 +35,7 @@ const eth = new Network({
 	],
 	explorerUrl: "https://sepolia.etherscan.io",
 	accentColor: "#627EEA",
+	attestationTime: ATTESTATION_TIMES.ETHEREUM,
 });
 
 const avalanche = new Network({
@@ -53,6 +55,7 @@ const avalanche = new Network({
 	],
 	explorerUrl: "https://testnet.snowtrace.io",
 	accentColor: "#E84142",
+	attestationTime: ATTESTATION_TIMES.AVALANCHE,
 });
 
 const op = new Network({
@@ -72,6 +75,7 @@ const op = new Network({
 	],
 	explorerUrl: "https://sepolia-optimism.etherscan.io",
 	accentColor: "#FF0420",
+	attestationTime: ATTESTATION_TIMES.OPTIMISM,
 });
 
 const arbitrum = new Network({
@@ -91,6 +95,7 @@ const arbitrum = new Network({
 	],
 	explorerUrl: "https://sepolia.arbiscan.io",
 	accentColor: "#28A0F0",
+	attestationTime: ATTESTATION_TIMES.ARBITRUM,
 });
 
 const base = new Network({
@@ -110,6 +115,7 @@ const base = new Network({
 	],
 	explorerUrl: "https://sepolia.basescan.org",
 	accentColor: "#0052FF",
+	attestationTime: ATTESTATION_TIMES.BASE,
 });
 
 const polygon = new Network({
@@ -129,6 +135,7 @@ const polygon = new Network({
 	],
 	explorerUrl: "https://amoy.polygonscan.com",
 	accentColor: "#8247E5",
+	attestationTime: ATTESTATION_TIMES.POLYGON,
 });
 
 const stellar = new Network({
@@ -152,6 +159,7 @@ const stellar = new Network({
 	rpcUrls: ["https://soroban-testnet.stellar.org"],
 	explorerUrl: "https://stellar.expert/explorer/testnet",
 	accentColor: "#FDDA24",
+	attestationTime: ATTESTATION_TIMES.STELLAR,
 });
 
 export const testnet: Network[] = [

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { Environment, NetworkId, NetworkService } from "../../../index";
+import {
+	AttestationTime,
+	Environment,
+	mainnet,
+	NetworkId,
+	NetworkService,
+	testnet,
+} from "../../../index";
 
 describe("NetworkService", () => {
 	const service = new NetworkService();
@@ -43,5 +50,45 @@ describe("NetworkService", () => {
 		expect(
 			service.byEvmChainId(Environment.MAINNET, 9_999_999),
 		).toBeUndefined();
+	});
+});
+
+describe("network attestation times", () => {
+	const all = [...mainnet, ...testnet];
+
+	it("gives every built-in network Circle's numbers, not the generic fallback", () => {
+		for (const network of all) {
+			expect(network.attestationTime).not.toBe(AttestationTime.GENERIC);
+		}
+	});
+
+	it("marks the chains Circle lists without Fast Transfer", () => {
+		const standardOnly = all
+			.filter((n) => !n.attestationTime.supportsFast)
+			.map((n) => n.id)
+			.sort();
+		expect(standardOnly).toEqual(
+			[
+				NetworkId.AVALANCHE,
+				NetworkId.AVALANCHE_FUJI,
+				NetworkId.HYPEREVM,
+				NetworkId.POLYGON,
+				NetworkId.POLYGON_AMOY,
+				NetworkId.SEI,
+				NetworkId.SONIC,
+				NetworkId.STELLAR,
+				NetworkId.STELLAR_TESTNET,
+			].sort(),
+		);
+	});
+
+	it("keeps the attestation time when RPC URLs are overridden", () => {
+		const stellar = mainnet.find((n) => n.id === NetworkId.STELLAR);
+		if (!stellar) {
+			throw new Error();
+		}
+		expect(stellar.withRpcUrls(["https://x.example"]).attestationTime).toBe(
+			stellar.attestationTime,
+		);
 	});
 });

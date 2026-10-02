@@ -87,7 +87,7 @@ await sdk.bridge.rawTxBuilder.approve({
 });
 ```
 
-On Stellar, an allowance expires. By default it lasts 100,000 ledgers after the approval (about 6 days at 5 to 6 seconds per ledger). Set `expiresInLedgers` to change it, up to Stellar's maximum entry lifetime of 3,110,400 ledgers (about 180 days). EVM allowances do not expire.
+On Stellar, an allowance expires. By default it lasts 100,000 ledgers after the approval (about 6 days at 5 to 6 seconds per ledger). Set `expiresInLedgers` to change it, up to 3,110,399 ledgers (about 180 days), one less than Stellar's maximum entry lifetime of 3,110,400 ledgers. EVM allowances do not expire.
 
 ## Stellar amounts
 
